@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Telegram.Bot" Version="19.0.0" />
+      <PackageReference Include="WorkflowCore" Version="3.11.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\client\YandexCalendar.Net\YandexCalendar.Net.csproj" />
+      <ProjectReference Include="..\SupernovaSchool\SupernovaSchool.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,148 @@
+using System.Net.Http.Headers;
+using System.Text;
+using System.Xml.Serialization;
+using Ical.Net;
+using YandexCalendar.Net.Contracts;
+using YandexCalendar.Net.Models;
+
+namespace YandexCalendar.Net;
+
+public interface IEventsResource
+{
+    Task AddEventAsync(UserCredentials user, Appointment appointment, string calendarUrl,
+        CancellationToken ct = default);
+
+    Task<IEnumerable<TimeSlot>> GetEventsAsync(UserCredentials user, DateTime from, DateTime to,
+        string calendarUrl,
+        CancellationToken ct = default);
+}
+
+public class EventsResource : IEventsResource
+{
+    private static readonly TimeZoneInfo MoscowTimeZone =
+        Environment.OSVersion.Platform == PlatformID.Win32Windows
+            ? TimeZoneInfo.FindSystemTimeZoneById("Russian Standard Time")
+            : TimeZoneInfo.FindSystemTimeZoneById("Europe/Moscow");
+
+
+    private const string CreateEventUrlTemplate = "{0}/{1}.ics";
+
+    private const string CreateEventTemplate = """
+                                               BEGIN:VCALENDAR
+                                               VERSION:2.0
+                                               PRODID:-//Yandex//NONSGML iCal4j 1.0//EN
+                                               BEGIN:VEVENT
+                                               UID:{0}
+                                               DTSTAMP;TZID=Europe/Moscow:{1}
+                                               DTSTART;TZID=Europe/Moscow:{2}
+                                               DTEND;TZID=Europe/Moscow:{3}
+                                               SUMMARY:{4}
+                                               DESCRIPTION:Запись создана через телеграм бота.
+                                               LOCATION:Online
+                                               END:VEVENT
+                                               END:VCALENDAR
+                                               """;
+
+    private const string GetEventsUrlTemplate = """
+                                                <?xml version="1.0" encoding="utf-8" ?>
+                                                <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+                                                    <D:prop>
+                                                        <D:getetag/>
+                                                        <C:calendar-data/>
+                                                    </D:prop>
+                                                    <C:filter>
+                                                        <C:comp-filter name="VCALENDAR">
+                                                            <C:comp-filter name="VEVENT">
+                                                                <C:time-range start="{0}" end="{1}"/>
+                                                            </C:comp-filter>
+                                                        </C:comp-filter>
+                                                    </C:filter>
+                                                </C:calendar-query>
+                                                """;
+
+    private readonly HttpClient _httpClient;
+
+    public EventsResource(HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+    }
+
+    public async Task AddEventAsync(UserCredentials user, Appointment appointment, string calendarUrl,
+        CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(user);
+        ArgumentException.ThrowIfNullOrWhiteSpace(calendarUrl);
+
+        _httpClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Basic", user.ToBasic64Credentials());
+
+        var uniqueIdForRequest = Guid.NewGuid().ToString();
+ 
+        var eventInfo = CreateEventRequest(uniqueIdForRequest, appointment.StartDate, appointment.EndDate,
+            appointment.Summary);
+
+        var formattedUrl = string.Format(CreateEventUrlTemplate, calendarUrl, uniqueIdForRequest);
+
+        using var createEventRequest = new HttpRequestMessage(HttpMethod.Put, formattedUrl);
+        createEventRequest.Content = new StringContent(eventInfo, Encoding.UTF8, "text/calendar");
+
+        // Send the request to add the event
+        var addEventResponse = await _httpClient.SendAsync(createEventRequest, ct);
+    }
+
+    public async Task<IEnumerable<TimeSlot>> GetEventsAsync(UserCredentials user, DateTime from, DateTime to,
+        string calendarUrl,
+        CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(user);
+
+        _httpClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Basic", user.ToBasic64Credentials());
+
+        var formattedRequest = string.Format(GetEventsUrlTemplate, CreateFormatedDate(from.ToUniversalTime()),
+            CreateFormatedDate(to.ToUniversalTime()));
+
+        using var reportRequest = new HttpRequestMessage(new HttpMethod("REPORT"), calendarUrl);
+        reportRequest.Content = new StringContent(formattedRequest, Encoding.UTF8, "application/xml");
+
+        // Set the depth header to "1" to retrieve all events in the specified time range
+        reportRequest.Headers.Add("Depth", "1");
+
+        var reportResponse = await _httpClient.SendAsync(reportRequest, ct);
+
+        var xmlResponse = await reportResponse.Content.ReadAsStringAsync(ct);
+
+        var serializer = new XmlSerializer(typeof(CalendarResponse));
+
+        using var reader = new StringReader(xmlResponse);
+        var multiStatus = (CalendarResponse)serializer.Deserialize(reader)!;
+
+        return multiStatus.CalendarItems
+            .Select(item => Calendar.Load(item.PropertyStatus.CalendarProperties.CalendarEventData))
+            .SelectMany(calendar =>
+            {
+                return calendar.Events.Select(@event =>
+                {
+                    var start = TimeZoneInfo.ConvertTime(@event.DtStart.AsUtc, MoscowTimeZone);
+                    var end = TimeZoneInfo.ConvertTime(@event.DtEnd.AsUtc, MoscowTimeZone);
+                    return new TimeSlot(TimeOnly.FromDateTime(start), TimeOnly.FromDateTime(end));
+                });
+            })
+            .Distinct();
+    }
+
+    private static string CreateEventRequest(string uniqueIdForRequest, DateTime startDate, DateTime endDate,
+        string summary)
+    {
+        var now = CreateFormatedDate(DateTime.UtcNow);
+        var start = CreateFormatedDate(startDate.ToUniversalTime());
+        var end = CreateFormatedDate(endDate.ToUniversalTime());
+
+        return string.Format(CreateEventTemplate, uniqueIdForRequest, now, start, end, summary);
+    }
+
+    private static string CreateFormatedDate(DateTime date)
+    {
+        return $"{date:yyyyMMddTHHmmssZ}";
+    }
+}
