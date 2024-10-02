@@ -23,7 +23,7 @@ public class EnsureThatUserDosentRegisteredOnMeeting : IUserStep, IStepBody
     public async Task<ExecutionResult> RunAsync(IStepExecutionContext context)
     {
         HasAppointment =
-            await _appointmentService.IsUserHasAppointmentForDateAsync(Date, UserId, context.CancellationToken);
+            await _appointmentService.IsStudentHasAppointmentForDateAsync(Date, UserId, context.CancellationToken);
         
         return ExecutionResult.Next();
     }

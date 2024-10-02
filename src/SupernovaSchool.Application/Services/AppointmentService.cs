@@ -1,3 +1,4 @@
+using Ical.Net.CalendarComponents;
 using SupernovaSchool.Abstractions;
 using SupernovaSchool.Abstractions.Repositories;
 using SupernovaSchool.Models;
@@ -48,18 +49,64 @@ public class AppointmentService : IAppointmentService
         await _calendarClient.EventsResource.AddEventAsync(userInfo, appointment, defaultCalendarUrl, studentId, ct);
     }
 
-    public async Task<bool> IsUserHasAppointmentForDateAsync(DateOnly date, string userId,
+    public async Task<IReadOnlyCollection<StudentAppointmentInfo>> GetStudentAppointmentsAsync(DateOnly day,
+        string userId,
+        CancellationToken ct = default)
+    {
+        var teachers = await _teacherRepository.ListAsync(ct);
+
+        var result = new List<StudentAppointmentInfo>();
+        foreach (var teacher in teachers)
+        {
+            var events = await GetEventsAsync(day, teacher, ct);
+
+            result.AddRange(events.Where(@event => @event.Description == userId).Select(@event =>
+                new StudentAppointmentInfo
+                {
+                    EventId = @event.Uid,
+                    TeacherName = teacher.Name,
+                    DueDate = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(@event.DtStart.AsUtc, MoscowTimeZone.Id)
+                }));
+        }
+
+        return result;
+    }
+
+    public async Task<bool> DeleteStudentAppointmentAsync(DateTime appointmentDay, string userId,
+        CancellationToken ct = default)
+    {
+        var teachers = await _teacherRepository.ListAsync(ct);
+        foreach (var teacher in teachers)
+        {
+            var defaultCalendarUrl = await GetDefaultCalendarUrl(teacher.Id, ct);
+            var userInfo = GetCredentials(teacher);
+
+            var events = await _calendarClient.EventsResource.GetEventsAsync(userInfo, appointmentDay.Date,
+                    appointmentDay.Date.Add(new TimeSpan(23, 59, 0)),
+                defaultCalendarUrl,
+                ct);
+
+            var userEvent = events.FirstOrDefault(@event => @event.Description == userId);
+            if (userEvent is null)
+            {
+                continue;
+            }
+
+            await _calendarClient.EventsResource.DeleteEventAsync(GetCredentials(teacher), defaultCalendarUrl,
+                userEvent.Uid, ct);
+        }
+
+        return false;
+    }
+
+    public async Task<bool> IsStudentHasAppointmentForDateAsync(DateOnly date, string userId,
         CancellationToken ct = default)
     {
         var teachers = await _teacherRepository.ListAsync(ct);
 
         foreach (var teacher in teachers)
         {
-            var defaultCalendarUrl = await GetDefaultCalendarUrl(teacher.Id, ct);
-            var userInfo = GetCredentials(teacher);
-            
-            var events = await _calendarClient.EventsResource.GetEventsAsync(userInfo, date.ToDateTime(new TimeOnly()),
-                date.ToDateTime(new TimeOnly(23,59)), defaultCalendarUrl, ct);
+            var events = await GetEventsAsync(date, teacher, ct);
 
             // we have an agreement that in the description will be only a user id
             if (events.Any(@event => @event.Description == userId))
@@ -120,5 +167,15 @@ public class AppointmentService : IAppointmentService
         }
 
         return teacher;
+    }
+
+    private async Task<IEnumerable<CalendarEvent>> GetEventsAsync(DateOnly date, Teacher teacher, CancellationToken ct)
+    {
+        var defaultCalendarUrl = await GetDefaultCalendarUrl(teacher.Id, ct);
+        var userInfo = GetCredentials(teacher);
+
+        var events = await _calendarClient.EventsResource.GetEventsAsync(userInfo, date.ToDateTime(new TimeOnly()),
+            date.ToDateTime(new TimeOnly(23, 59)), defaultCalendarUrl, ct);
+        return events;
     }
 }

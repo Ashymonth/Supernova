@@ -17,14 +17,14 @@ public interface IEventsResource
     Task<IEnumerable<CalendarEvent>> GetEventsAsync(UserCredentials user, DateTime from, DateTime to,
         string calendarUrl,
         CancellationToken ct = default);
+
+    Task DeleteEventAsync(UserCredentials credentials, string calendarUrl, string eventId,
+        CancellationToken ct = default);
 }
 
 public class EventsResource : IEventsResource
 {
-   
-
-
-    private const string CreateEventUrlTemplate = "{0}/{1}.ics";
+    private const string CreateEventUrlTemplate = "{0}{1}.ics";
 
     private const string CreateEventTemplate = """
                                                BEGIN:VCALENDAR
@@ -121,6 +121,21 @@ public class EventsResource : IEventsResource
             .Select(item => Calendar.Load(item.PropertyStatus.CalendarProperties.CalendarEventData))
             .SelectMany(calendar => calendar.Events)
             .Distinct();
+    }
+
+    public async Task DeleteEventAsync(UserCredentials credentials, string calendarUrl, string eventId,
+        CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(credentials);
+        ArgumentException.ThrowIfNullOrEmpty(eventId);
+
+        _httpClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Basic", credentials.ToBasic64Credentials());
+
+        var formattedUrl = string.Format(CreateEventUrlTemplate, calendarUrl, eventId);
+
+        using var response = await _httpClient.DeleteAsync(formattedUrl, ct);
+        response.EnsureSuccessStatusCode();
     }
 
     private static string CreateEventRequest(string uniqueIdForRequest, DateTime startDate, DateTime endDate,

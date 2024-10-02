@@ -7,6 +7,7 @@ using SupernovaSchool.Data;
 using SupernovaSchool.Data.Repositories;
 using SupernovaSchool.Telegram.Extensions;
 using SupernovaSchool.Telegram.Workflows.CreateAppointment;
+using SupernovaSchool.Telegram.Workflows.MyAppointments;
 using SupernovaSchool.Telegram.Workflows.RegisterStudent;
 using WorkflowCore.Interface;
 using YandexCalendar.Net.Extensions;
@@ -37,6 +38,7 @@ using (var scope = app.Services.CreateScope())
 
     workflow.RegisterWorkflow<CreateAppointmentWorkflow, CreateAppointmentWorkflowData>();
     workflow.RegisterWorkflow<RegisterStudentWorkflow, RegisterStudentWorkflowData>();
+    workflow.RegisterWorkflow<DeleteMyAppointmentsWorkflow, DeleteMyAppointmentsWorkflowData>();
     workflow.Start();
 }
 
