@@ -25,6 +25,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<RegisterStudentStep>();
 
         services.AddTransient<EnsureThatStudentRegisteredStep>();
+        services.AddTransient<EnsureThatUserDosentRegisteredOnMeeting>();
         services.AddTransient<LoadAvailableMeetingDays>();
         services.AddTransient<CreateMeetingStep>();
         

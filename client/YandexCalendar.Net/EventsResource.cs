@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Xml.Serialization;
 using Ical.Net;
+using Ical.Net.CalendarComponents;
 using YandexCalendar.Net.Contracts;
 using YandexCalendar.Net.Models;
 
@@ -10,19 +11,17 @@ namespace YandexCalendar.Net;
 public interface IEventsResource
 {
     Task AddEventAsync(UserCredentials user, Appointment appointment, string calendarUrl,
+        string description,
         CancellationToken ct = default);
 
-    Task<IEnumerable<TimeSlot>> GetEventsAsync(UserCredentials user, DateTime from, DateTime to,
+    Task<IEnumerable<CalendarEvent>> GetEventsAsync(UserCredentials user, DateTime from, DateTime to,
         string calendarUrl,
         CancellationToken ct = default);
 }
 
 public class EventsResource : IEventsResource
 {
-    private static readonly TimeZoneInfo MoscowTimeZone =
-        Environment.OSVersion.Platform == PlatformID.Win32Windows
-            ? TimeZoneInfo.FindSystemTimeZoneById("Russian Standard Time")
-            : TimeZoneInfo.FindSystemTimeZoneById("Europe/Moscow");
+   
 
 
     private const string CreateEventUrlTemplate = "{0}/{1}.ics";
@@ -37,7 +36,7 @@ public class EventsResource : IEventsResource
                                                DTSTART;TZID=Europe/Moscow:{2}
                                                DTEND;TZID=Europe/Moscow:{3}
                                                SUMMARY:{4}
-                                               DESCRIPTION:Запись создана через телеграм бота.
+                                               DESCRIPTION:{5}
                                                LOCATION:Online
                                                END:VEVENT
                                                END:VCALENDAR
@@ -68,6 +67,7 @@ public class EventsResource : IEventsResource
     }
 
     public async Task AddEventAsync(UserCredentials user, Appointment appointment, string calendarUrl,
+        string description,
         CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(user);
@@ -77,9 +77,9 @@ public class EventsResource : IEventsResource
             new AuthenticationHeaderValue("Basic", user.ToBasic64Credentials());
 
         var uniqueIdForRequest = Guid.NewGuid().ToString();
- 
+
         var eventInfo = CreateEventRequest(uniqueIdForRequest, appointment.StartDate, appointment.EndDate,
-            appointment.Summary);
+            appointment.Summary, description);
 
         var formattedUrl = string.Format(CreateEventUrlTemplate, calendarUrl, uniqueIdForRequest);
 
@@ -90,7 +90,7 @@ public class EventsResource : IEventsResource
         var addEventResponse = await _httpClient.SendAsync(createEventRequest, ct);
     }
 
-    public async Task<IEnumerable<TimeSlot>> GetEventsAsync(UserCredentials user, DateTime from, DateTime to,
+    public async Task<IEnumerable<CalendarEvent>> GetEventsAsync(UserCredentials user, DateTime from, DateTime to,
         string calendarUrl,
         CancellationToken ct = default)
     {
@@ -119,26 +119,18 @@ public class EventsResource : IEventsResource
 
         return multiStatus.CalendarItems
             .Select(item => Calendar.Load(item.PropertyStatus.CalendarProperties.CalendarEventData))
-            .SelectMany(calendar =>
-            {
-                return calendar.Events.Select(@event =>
-                {
-                    var start = TimeZoneInfo.ConvertTime(@event.DtStart.AsUtc, MoscowTimeZone);
-                    var end = TimeZoneInfo.ConvertTime(@event.DtEnd.AsUtc, MoscowTimeZone);
-                    return new TimeSlot(TimeOnly.FromDateTime(start), TimeOnly.FromDateTime(end));
-                });
-            })
+            .SelectMany(calendar => calendar.Events)
             .Distinct();
     }
 
     private static string CreateEventRequest(string uniqueIdForRequest, DateTime startDate, DateTime endDate,
-        string summary)
+        string summary, string description)
     {
         var now = CreateFormatedDate(DateTime.UtcNow);
         var start = CreateFormatedDate(startDate.ToUniversalTime());
         var end = CreateFormatedDate(endDate.ToUniversalTime());
 
-        return string.Format(CreateEventTemplate, uniqueIdForRequest, now, start, end, summary);
+        return string.Format(CreateEventTemplate, uniqueIdForRequest, now, start, end, summary, description);
     }
 
     private static string CreateFormatedDate(DateTime date)

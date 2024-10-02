@@ -1,6 +1,5 @@
 using SupernovaSchool.Telegram.Extensions;
 using SupernovaSchool.Telegram.Steps;
-using SupernovaSchool.Telegram.Steps.Common;
 using SupernovaSchool.Telegram.Workflows.CreateAppointment.Extensions;
 using SupernovaSchool.Telegram.Workflows.CreateAppointment.Steps;
 using WorkflowCore.Interface;
@@ -38,6 +37,14 @@ public class CreateAppointmentWorkflow : IWorkflow<CreateAppointmentWorkflowData
                 .SendMessageToUser(
                     "На выбранный день нет доступх мест для записи. Выберите другой день или другого психолога")
                 .EndWorkflow())
+            .Then<EnsureThatUserDosentRegisteredOnMeeting>()
+            .Input(meeting => meeting.UserId, data => data.UserId)
+            .Input(meeting => meeting.Date, data => DateOnly.Parse(data.PaginationMessage))
+            .Output(data => data.UserHasAppointment, user => user.HasAppointment)
+            .If(data => data.UserHasAppointment).Do(workflowBuilder =>
+                workflowBuilder.SendMessageToUser(
+                        "У вас уже есть запись на этот день. На 1 день можно записать не больше 1 раза")
+                    .EndWorkflow())
             .SendVariants("Выберите время для записи",
                 data => data.AvailableTimeSlots.Select(slot => $"{slot.Start} -{slot.End}").ToArray())
             .WaitForUserMessage(data => data.PaginationMessage, message => message.Message)

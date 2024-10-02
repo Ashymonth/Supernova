@@ -22,7 +22,7 @@ public class TeacherService : ITeacherService
     public async Task<TimeRange[]> FindAvailableTimeSlots(Guid teacherId, DateTime meetingDay,
         CancellationToken ct = default)
     {
-        var reservedTimeSlots = await _appointmentService.GetAppointmentsAsync(teacherId, meetingDay.Date,
+        var reservedTimeSlots = await _appointmentService.GetAppointmentsDatesAsync(teacherId, meetingDay.Date,
             meetingDay.Date.AddHours(23).AddMinutes(59), ct);
 
         var calendar = new TeacherCalendar(_timeProvider);

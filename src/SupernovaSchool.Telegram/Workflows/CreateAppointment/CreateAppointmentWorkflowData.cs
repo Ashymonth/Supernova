@@ -16,6 +16,8 @@ public class CreateAppointmentWorkflowData : MessagePaginator, IUserStep
 
     public TimeRange[] AvailableTimeSlots { get; set; } = [];
 
+    public bool UserHasAppointment { get; set; }
+
     public bool IsMeetingDateValid()
     {
         return DateTime.TryParse(PaginationMessage, out var date) && AvailableMeetingDays.Any(time => time.Date == date.Date);

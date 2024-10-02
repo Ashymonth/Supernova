@@ -9,6 +9,11 @@ namespace SupernovaSchool.Application.Services;
 
 public class AppointmentService : IAppointmentService
 {
+    private static readonly TimeZoneInfo MoscowTimeZone =
+        Environment.OSVersion.Platform == PlatformID.Win32Windows
+            ? TimeZoneInfo.FindSystemTimeZoneById("Russian Standard Time")
+            : TimeZoneInfo.FindSystemTimeZoneById("Europe/Moscow");
+
     private readonly IYandexCalendarClient _calendarClient;
     private readonly IRepository<Teacher> _teacherRepository;
     private readonly IRepository<Student> _studentRepository;
@@ -40,17 +45,47 @@ public class AppointmentService : IAppointmentService
 
         var defaultCalendarUrl = await GetDefaultCalendarUrl(teacherId, ct);
 
-        await _calendarClient.EventsResource.AddEventAsync(userInfo, appointment, defaultCalendarUrl, ct);
+        await _calendarClient.EventsResource.AddEventAsync(userInfo, appointment, defaultCalendarUrl, studentId, ct);
     }
 
-    public async Task<IEnumerable<TimeSlot>> GetAppointmentsAsync(Guid teacherId, DateTime from, DateTime to,
+    public async Task<bool> IsUserHasAppointmentForDateAsync(DateOnly date, string userId,
+        CancellationToken ct = default)
+    {
+        var teachers = await _teacherRepository.ListAsync(ct);
+
+        foreach (var teacher in teachers)
+        {
+            var defaultCalendarUrl = await GetDefaultCalendarUrl(teacher.Id, ct);
+            var userInfo = GetCredentials(teacher);
+            
+            var events = await _calendarClient.EventsResource.GetEventsAsync(userInfo, date.ToDateTime(new TimeOnly()),
+                date.ToDateTime(new TimeOnly(23,59)), defaultCalendarUrl, ct);
+
+            // we have an agreement that in the description will be only a user id
+            if (events.Any(@event => @event.Description == userId))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public async Task<IEnumerable<TimeSlot>> GetAppointmentsDatesAsync(Guid teacherId, DateTime from, DateTime to,
         CancellationToken ct = default)
     {
         var defaultCalendarUrl = await GetDefaultCalendarUrl(teacherId, ct);
         var teacher = await GetTeacherOrThrowAsync(teacherId, ct);
         var userInfo = GetCredentials(teacher);
 
-        return await _calendarClient.EventsResource.GetEventsAsync(userInfo, from, to, defaultCalendarUrl, ct);
+        var events = await _calendarClient.EventsResource.GetEventsAsync(userInfo, from, to, defaultCalendarUrl, ct);
+
+        return events.Select(@event =>
+        {
+            var start = TimeZoneInfo.ConvertTime(@event.DtStart.AsUtc, MoscowTimeZone);
+            var end = TimeZoneInfo.ConvertTime(@event.DtEnd.AsUtc, MoscowTimeZone);
+            return new TimeSlot(TimeOnly.FromDateTime(start), TimeOnly.FromDateTime(end));
+        });
     }
 
     private async Task<string> GetDefaultCalendarUrl(Guid teacherId, CancellationToken ct)
