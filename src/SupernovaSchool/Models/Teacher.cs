@@ -5,12 +5,11 @@ public class Teacher
     //for ef
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     // ReSharper disable once UnusedMember.Local
-    private  Teacher()
+    private Teacher()
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     {
-        
     }
-    
+
     private Teacher(string name, string email, string yandexCalendarPassword)
     {
         Name = name;
@@ -19,27 +18,27 @@ public class Teacher
     }
 
     /// <summary>
-    /// Unique identifier.
+    ///     Unique identifier.
     /// </summary>
     public Guid Id { get; private set; }
 
     /// <summary>
-    /// The teacher name.
+    ///     The teacher name.
     /// </summary>
-    public string Name { get; private set; }  
+    public string Name { get; private set; }
 
     /// <summary>
-    /// The teacher email on yandex.
+    ///     The teacher email on yandex.
     /// </summary>
-    public string Email { get; private set; }  
+    public string Email { get; private set; }
 
     /// <summary>
-    /// A password to access yandex calendar.
+    ///     A password to access yandex calendar.
     /// </summary>
-    public string YandexCalendarPassword { get; private set; }  
+    public string YandexCalendarPassword { get; private set; }
 
     /// <summary>
-    /// Create a new model of teacher.
+    ///     Create a new model of teacher.
     /// </summary>
     /// <param name="name">Teacher name.</param>
     /// <param name="email">Teacher email on yandex</param>
@@ -51,7 +50,7 @@ public class Teacher
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentException.ThrowIfNullOrWhiteSpace(email);
         ArgumentException.ThrowIfNullOrWhiteSpace(yandexCalendarPassword);
-        
+
         return new Teacher(name, email, yandexCalendarPassword);
     }
 }

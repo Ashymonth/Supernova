@@ -6,7 +6,7 @@ public record OrganizerInfo
     {
         ArgumentNullException.ThrowIfNull(organizerId);
         ArgumentNullException.ThrowIfNull(organizerName);
-        
+
         OrganizerId = organizerId;
         OrganizerName = organizerName;
     }
@@ -14,5 +14,4 @@ public record OrganizerInfo
     public string OrganizerId { get; set; }
 
     public string OrganizerName { get; set; }
-
 }

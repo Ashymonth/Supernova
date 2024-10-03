@@ -8,11 +8,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="TUnit" Version="0.1.885" />
+        <PackageReference Include="TUnit" Version="0.1.885"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\SupernovaSchool\SupernovaSchool.csproj" />
+        <ProjectReference Include="..\..\src\SupernovaSchool\SupernovaSchool.csproj"/>
     </ItemGroup>
 
 </Project>

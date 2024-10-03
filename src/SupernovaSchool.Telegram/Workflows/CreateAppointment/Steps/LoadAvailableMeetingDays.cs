@@ -1,23 +1,24 @@
-using SupernovaSchool.Abstractions;
+using SupernovaSchool.Extensions;
 using WorkflowCore.Interface;
 using WorkflowCore.Models;
+using IDateTimeProvider = SupernovaSchool.Abstractions.IDateTimeProvider;
 
 namespace SupernovaSchool.Telegram.Workflows.CreateAppointment.Steps;
 
 internal class LoadAvailableMeetingDays : IStepBody
 {
-    private readonly ITeacherService _meetingService;
+    private readonly IDateTimeProvider _timeProvider;
 
-    public LoadAvailableMeetingDays(ITeacherService meetingService)
+    public LoadAvailableMeetingDays(IDateTimeProvider timeProvider)
     {
-        _meetingService = meetingService;
+        _timeProvider = timeProvider;
     }
 
     public DateTime[] AvailableMeetingDays { get; set; } = null!;
 
     public Task<ExecutionResult> RunAsync(IStepExecutionContext context)
     {
-        AvailableMeetingDays = _meetingService.GetAvailableMeetingDates().ToArray();
+        AvailableMeetingDays = _timeProvider.Now.GetTeacherWorkingDays().ToArray();
 
         return Task.FromResult(ExecutionResult.Next());
     }

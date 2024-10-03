@@ -7,12 +7,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Ardalis.Specification.EntityFrameworkCore" Version="8.0.0" />
-      <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.8" />
+        <PackageReference Include="Ardalis.Specification.EntityFrameworkCore" Version="8.0.0"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.8"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\SupernovaSchool\SupernovaSchool.csproj" />
+        <ProjectReference Include="..\SupernovaSchool\SupernovaSchool.csproj"/>
     </ItemGroup>
 
 </Project>

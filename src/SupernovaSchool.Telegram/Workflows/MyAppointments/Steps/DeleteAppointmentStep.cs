@@ -14,15 +14,15 @@ public class DeleteAppointmentStep : IUserStep, IStepBody
         _appointmentService = appointmentService;
     }
 
-    public string UserId { get; set; } = null!;
-
     public DateTime AppointmentDay { get; set; }
 
 
     public async Task<ExecutionResult> RunAsync(IStepExecutionContext context)
     {
         await _appointmentService.DeleteStudentAppointmentAsync(AppointmentDay, UserId, context.CancellationToken);
-        
+
         return ExecutionResult.Next();
     }
+
+    public string UserId { get; set; } = null!;
 }

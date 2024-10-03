@@ -15,8 +15,6 @@ public class SendMessageWithOptionsToUser : IStepBody, IUserStep
         _telegramBotClient = telegramBotClient;
     }
 
-    public string UserId { get; set; } = default!;
-
     public string Message { get; set; } = default!;
 
     public string[] Options { get; set; } = null!;
@@ -30,15 +28,9 @@ public class SendMessageWithOptionsToUser : IStepBody, IUserStep
         var paginatedOptions = ShouldPaginate ? Options.Skip(Page * ItemsPerPage).Take(ItemsPerPage) : Options;
 
         var buttons = paginatedOptions.Select(x => new KeyboardButton(x)).ToList();
-        if (ShouldPaginate && buttons.Count == ItemsPerPage)
-        {
-            buttons.Add(new KeyboardButton("Дальше"));
-        }
+        if (ShouldPaginate && buttons.Count == ItemsPerPage) buttons.Add(new KeyboardButton("Дальше"));
 
-        if (Page >= 1)
-        {
-            buttons.Add(new KeyboardButton("Назад"));
-        }
+        if (Page >= 1) buttons.Add(new KeyboardButton("Назад"));
 
         var answerOptions = new ReplyKeyboardMarkup(buttons)
         {
@@ -49,4 +41,6 @@ public class SendMessageWithOptionsToUser : IStepBody, IUserStep
 
         return ExecutionResult.Next();
     }
+
+    public string UserId { get; set; } = default!;
 }

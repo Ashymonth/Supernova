@@ -1,6 +1,10 @@
+using SupernovaSchool.Models;
+
 namespace SupernovaSchool.Abstractions;
 
 public interface IStudentService
 {
-    Task<bool> IsStudentExistAsync(string studentId, CancellationToken ct = default);
+    Task AddOrUpdateAsync(Student student, CancellationToken ct = default);
+
+    Task<Student?> GetStudentAsync(string studentId);
 }

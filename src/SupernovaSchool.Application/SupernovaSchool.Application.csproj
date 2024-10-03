@@ -7,7 +7,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\SupernovaSchool\SupernovaSchool.csproj" />
+        <ProjectReference Include="..\SupernovaSchool\SupernovaSchool.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Reference Include="Microsoft.Extensions.Caching.Abstractions">
+            <HintPath>C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App\8.0.6\Microsoft.Extensions.Caching.Abstractions.dll</HintPath>
+        </Reference>
     </ItemGroup>
 
 </Project>

@@ -7,15 +7,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Ardalis.Specification" Version="8.0.0" />
+        <PackageReference Include="Ardalis.Specification" Version="8.0.0"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\client\YandexCalendar.Net\YandexCalendar.Net.csproj" />
+        <ProjectReference Include="..\..\client\YandexCalendar.Net\YandexCalendar.Net.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Security\" />
+        <Folder Include="Security\"/>
     </ItemGroup>
 
 </Project>

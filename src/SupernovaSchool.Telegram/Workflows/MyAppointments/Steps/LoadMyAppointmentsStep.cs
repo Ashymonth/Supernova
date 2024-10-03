@@ -1,4 +1,5 @@
 using SupernovaSchool.Abstractions;
+using SupernovaSchool.Extensions;
 using SupernovaSchool.Models;
 using SupernovaSchool.Telegram.Steps;
 using WorkflowCore.Interface;
@@ -18,17 +19,18 @@ public class LoadMyAppointmentsStep : IStepBody, IUserStep
         _timeProvider = timeProvider;
     }
 
-    public string UserId { get; set; } = null!;
-
     public IReadOnlyCollection<StudentAppointmentInfo> StudentAppointments { get; set; } = [];
 
     public async Task<ExecutionResult> RunAsync(IStepExecutionContext context)
     {
         ArgumentException.ThrowIfNullOrEmpty(UserId);
 
-        StudentAppointments = await _appointmentService.GetStudentAppointmentsAsync(
-            DateOnly.FromDateTime(_timeProvider.Now), UserId, context.CancellationToken);
-        
+        var workingDays = _timeProvider.Now.GetTeacherWorkingDays().ToArray();
+        StudentAppointments = await _appointmentService.GetStudentAppointmentsAsync(workingDays.Min().Date,
+            workingDays.Max().Date.AddHours(23).AddMinutes(59), UserId, context.CancellationToken);
+
         return ExecutionResult.Next();
     }
+
+    public string UserId { get; set; } = null!;
 }

@@ -1,9 +1,7 @@
-using Ical.Net.CalendarComponents;
+using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 using SupernovaSchool.Abstractions;
-using SupernovaSchool.Abstractions.Repositories;
 using SupernovaSchool.Models;
-using SupernovaSchool.Specifications;
-using YandexCalendar.Net;
 using YandexCalendar.Net.Models;
 
 namespace SupernovaSchool.Application.Services;
@@ -15,16 +13,24 @@ public class AppointmentService : IAppointmentService
             ? TimeZoneInfo.FindSystemTimeZoneById("Russian Standard Time")
             : TimeZoneInfo.FindSystemTimeZoneById("Europe/Moscow");
 
-    private readonly IYandexCalendarClient _calendarClient;
-    private readonly IRepository<Teacher> _teacherRepository;
-    private readonly IRepository<Student> _studentRepository;
+    private static readonly TimeOnly WorkStartTime = new(8, 30);
+    private static readonly TimeOnly WorkEndTime = new(18, 30);
+    private static readonly TimeSpan SlotInterval = TimeSpan.FromMinutes(30);
+    private readonly IEventService _eventService;
+    private readonly ILogger<AppointmentService> _logger;
 
-    public AppointmentService(IYandexCalendarClient calendarClient, IRepository<Teacher> teacherRepository,
-        IRepository<Student> studentRepository)
+    private readonly IStudentService _studentService;
+    private readonly ITeacherService _teacherService;
+    private readonly IDateTimeProvider _timeProvider;
+
+    public AppointmentService(IStudentService studentService, IEventService eventService,
+        ITeacherService teacherService, IDateTimeProvider timeProvider, ILogger<AppointmentService> logger)
     {
-        _calendarClient = calendarClient;
-        _teacherRepository = teacherRepository;
-        _studentRepository = studentRepository;
+        _studentService = studentService;
+        _eventService = eventService;
+        _teacherService = teacherService;
+        _timeProvider = timeProvider;
+        _logger = logger;
     }
 
     public async Task CreateAppointment(Guid teacherId,
@@ -34,98 +40,89 @@ public class AppointmentService : IAppointmentService
     {
         var teacher = await GetTeacherOrThrowAsync(teacherId, ct);
 
-        var student = await _studentRepository.FirstOrDefaultAsync(new StudentByIdSpecification(studentId), ct);
-        if (student is null)
-        {
-            throw new ArgumentNullException();
-        }
+        var student = await _studentService.GetStudentAsync(studentId) ?? throw new ArgumentNullException();
 
         var appointment = new Appointment(student.CreateAppointmentSummary(), startDate, endDate);
 
-        var userInfo = new UserCredentials(teacher.Email, teacher.YandexCalendarPassword);
-
-        var defaultCalendarUrl = await GetDefaultCalendarUrl(teacherId, ct);
-
-        await _calendarClient.EventsResource.AddEventAsync(userInfo, appointment, defaultCalendarUrl, studentId, ct);
+        await _eventService.CreateEventAsync(teacher, appointment, studentId, ct);
     }
 
-    public async Task<IReadOnlyCollection<StudentAppointmentInfo>> GetStudentAppointmentsAsync(DateOnly day,
+    public async Task<IReadOnlyCollection<StudentAppointmentInfo>> GetStudentAppointmentsAsync(DateTime from,
+        DateTime to,
         string userId,
         CancellationToken ct = default)
     {
-        var teachers = await _teacherRepository.ListAsync(ct);
+        var teachers = await _teacherService.GetTeachersAsync(ct);
 
-        var result = new List<StudentAppointmentInfo>();
-        foreach (var teacher in teachers)
+        var result = new ConcurrentBag<StudentAppointmentInfo>();
+
+        var resultTasks = teachers.Select(teacher =>
         {
-            var events = await GetEventsAsync(day, teacher, ct);
-
-            result.AddRange(events.Where(@event => @event.Description == userId).Select(@event =>
-                new StudentAppointmentInfo
+            return _eventService.GetEventsAsync(teacher, from, to, ct)
+                .ContinueWith(task =>
                 {
-                    EventId = @event.Uid,
-                    TeacherName = teacher.Name,
-                    DueDate = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(@event.DtStart.AsUtc, MoscowTimeZone.Id)
-                }));
-        }
+                    if (task.IsFaulted)
+                    {
+                        _logger.LogWarning(task.Exception, "Unable to get events for teacher: {Teacher} {EventDay}",
+                            teacher.Name, to);
+                        return;
+                    }
+
+                    foreach (var @event in task.Result.Where(@event => @event.Description == userId))
+                    {
+                        var appointmentInfo = new StudentAppointmentInfo
+                        {
+                            EventId = @event.Uid,
+                            TeacherName = teacher.Name,
+                            DueDate = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(@event.DtStart.AsUtc,
+                                MoscowTimeZone.Id)
+                        };
+
+                        result.Add(appointmentInfo);
+                    }
+                }, ct);
+        });
+
+        await Task.WhenAll(resultTasks);
 
         return result;
     }
 
-    public async Task<bool> DeleteStudentAppointmentAsync(DateTime appointmentDay, string userId,
+    public async Task DeleteStudentAppointmentAsync(DateTime appointmentDay, string userId,
         CancellationToken ct = default)
     {
-        var teachers = await _teacherRepository.ListAsync(ct);
-        foreach (var teacher in teachers)
+        var teachers = await _teacherService.GetTeachersAsync(ct);
+
+        var result = teachers.Select(teacher =>
         {
-            var defaultCalendarUrl = await GetDefaultCalendarUrl(teacher.Id, ct);
-            var userInfo = GetCredentials(teacher);
+            return _eventService.GetEventsForDayAsync(teacher, DateOnly.FromDateTime(appointmentDay), ct)
+                .ContinueWith(async task =>
+                {
+                    var userEvent = task.Result.FirstOrDefault(@event => @event.Description == userId);
+                    if (userEvent is null) return;
 
-            var events = await _calendarClient.EventsResource.GetEventsAsync(userInfo, appointmentDay.Date,
-                    appointmentDay.Date.Add(new TimeSpan(23, 59, 0)),
-                defaultCalendarUrl,
-                ct);
+                    await _eventService.DeleteEventAsync(teacher, userEvent.Uid, ct);
+                }, ct);
+        });
 
-            var userEvent = events.FirstOrDefault(@event => @event.Description == userId);
-            if (userEvent is null)
-            {
-                continue;
-            }
-
-            await _calendarClient.EventsResource.DeleteEventAsync(GetCredentials(teacher), defaultCalendarUrl,
-                userEvent.Uid, ct);
-        }
-
-        return false;
+        await Task.WhenAll(result);
     }
 
-    public async Task<bool> IsStudentHasAppointmentForDateAsync(DateOnly date, string userId,
+    public async Task<TimeRange[]> FindTeacherAvailableAppointmentSlotsAsync(Guid teacherId, DateTime meetingDay,
         CancellationToken ct = default)
     {
-        var teachers = await _teacherRepository.ListAsync(ct);
+        var reservedTimeSlots = await GetAppointmentsDatesAsync(teacherId, meetingDay.Date,
+            meetingDay.Date.AddHours(23).AddMinutes(59), ct);
 
-        foreach (var teacher in teachers)
-        {
-            var events = await GetEventsAsync(date, teacher, ct);
-
-            // we have an agreement that in the description will be only a user id
-            if (events.Any(@event => @event.Description == userId))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return FindAvailableTimeSlots(meetingDay, reservedTimeSlots.ToList()).ToArray();
     }
 
-    public async Task<IEnumerable<TimeSlot>> GetAppointmentsDatesAsync(Guid teacherId, DateTime from, DateTime to,
+    private async Task<IEnumerable<TimeSlot>> GetAppointmentsDatesAsync(Guid teacherId, DateTime from, DateTime to,
         CancellationToken ct = default)
     {
-        var defaultCalendarUrl = await GetDefaultCalendarUrl(teacherId, ct);
         var teacher = await GetTeacherOrThrowAsync(teacherId, ct);
-        var userInfo = GetCredentials(teacher);
 
-        var events = await _calendarClient.EventsResource.GetEventsAsync(userInfo, from, to, defaultCalendarUrl, ct);
+        var events = await _eventService.GetEventsAsync(teacher, from, to, ct);
 
         return events.Select(@event =>
         {
@@ -135,47 +132,51 @@ public class AppointmentService : IAppointmentService
         });
     }
 
-    private async Task<string> GetDefaultCalendarUrl(Guid teacherId, CancellationToken ct)
-    {
-        var teacher = await GetTeacherOrThrowAsync(teacherId, ct);
-
-        var userInfo = new UserCredentials(teacher.Email, teacher.YandexCalendarPassword);
-        var defaultCalendarUrl = await _calendarClient.CalendarResource.GetDefaultCalendarUrl(userInfo, ct);
-
-        if (defaultCalendarUrl is null)
-        {
-            throw new ArgumentNullException();
-        }
-
-        return defaultCalendarUrl;
-    }
-
-    private static UserCredentials GetCredentials(Teacher teacher)
-    {
-        var userInfo = new UserCredentials(teacher.Email, teacher.YandexCalendarPassword);
-
-        return userInfo;
-    }
-
     private async Task<Teacher> GetTeacherOrThrowAsync(Guid teacherId, CancellationToken ct)
     {
-        var teacher = await _teacherRepository.FirstOrDefaultAsync(new TeacherByIdSpecification(teacherId), ct);
+        var teacher = await _teacherService.GetTeacherAsync(teacherId, ct);
 
-        if (teacher is null)
-        {
-            throw new InvalidOperationException();
-        }
+        if (teacher is null) throw new InvalidOperationException();
 
         return teacher;
     }
 
-    private async Task<IEnumerable<CalendarEvent>> GetEventsAsync(DateOnly date, Teacher teacher, CancellationToken ct)
+    private List<TimeRange> FindAvailableTimeSlots(DateTime meetingDay, List<TimeSlot> reservedSlots)
     {
-        var defaultCalendarUrl = await GetDefaultCalendarUrl(teacher.Id, ct);
-        var userInfo = GetCredentials(teacher);
+        // Sort reserved slots by their start time for easier comparison.
+        reservedSlots.Sort((x, y) => x.Start.CompareTo(y.Start));
 
-        var events = await _calendarClient.EventsResource.GetEventsAsync(userInfo, date.ToDateTime(new TimeOnly()),
-            date.ToDateTime(new TimeOnly(23, 59)), defaultCalendarUrl, ct);
-        return events;
+        var result = new List<TimeRange>();
+        var today = _timeProvider.Now;
+
+        var slotStart = WorkStartTime;
+
+        // Iterate through each possible time slot within working hours.
+        while (slotStart < WorkEndTime)
+        {
+            if (IsSlotAfterCurrentTime(meetingDay, slotStart, today) &&
+                !IsSlotReserved(slotStart, reservedSlots))
+                result.Add(new TimeRange(slotStart, slotStart.Add(SlotInterval)));
+
+            slotStart = slotStart.Add(SlotInterval);
+        }
+
+        return result;
+    }
+
+    // Checks if the slot is after the current time.
+    private static bool IsSlotAfterCurrentTime(DateTime meetingDay, TimeOnly slotStart, DateTime today)
+    {
+        if (meetingDay.Date < today.Date) return false;
+
+        return !(meetingDay.Date == today.Date && slotStart.ToTimeSpan() <= today.TimeOfDay);
+    }
+
+    // Determines if a given slot is reserved.
+    private static bool IsSlotReserved(TimeOnly slotStart, List<TimeSlot> reservedSlots)
+    {
+        // Iterate through the sorted reserved slots and check if the slot overlaps with any reserved slot.
+        return reservedSlots.TakeWhile(reservedSlot => slotStart >= reservedSlot.Start).Any(reservedSlot =>
+            slotStart >= reservedSlot.Start && slotStart < reservedSlot.End);
     }
 }

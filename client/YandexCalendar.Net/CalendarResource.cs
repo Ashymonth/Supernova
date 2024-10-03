@@ -8,7 +8,7 @@ namespace YandexCalendar.Net;
 
 public interface ICalendarResource
 {
-    Task<string?> GetDefaultCalendarUrl(UserCredentials user, CancellationToken ct = default);
+    Task<string> GetDefaultCalendarUrl(UserCredentials user, CancellationToken ct = default);
 }
 
 public class CalendarResource : ICalendarResource
@@ -32,7 +32,7 @@ public class CalendarResource : ICalendarResource
         _httpClient = httpClient;
     }
 
-    public async Task<string?> GetDefaultCalendarUrl(UserCredentials user,CancellationToken ct = default)
+    public async Task<string> GetDefaultCalendarUrl(UserCredentials user, CancellationToken ct = default)
     {
         _httpClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Basic", user.ToBasic64Credentials());

@@ -9,26 +9,26 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Content Include="..\..\.dockerignore">
-        <Link>.dockerignore</Link>
-      </Content>
-      <Content Update="appsettings.Development.json">
-        <DependentUpon>appsettings.json</DependentUpon>
-      </Content>
+        <Content Include="..\..\.dockerignore">
+            <Link>.dockerignore</Link>
+        </Content>
+        <Content Update="appsettings.Development.json">
+            <DependentUpon>appsettings.json</DependentUpon>
+        </Content>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.8">
-        <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      </PackageReference>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.8">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\client\YandexCalendar.Net\YandexCalendar.Net.csproj" />
-      <ProjectReference Include="..\SupernovaSchool.Application\SupernovaSchool.Application.csproj" />
-      <ProjectReference Include="..\SupernovaSchool.Data\SupernovaSchool.Data.csproj" />
-      <ProjectReference Include="..\SupernovaSchool.Telegram\SupernovaSchool.Telegram.csproj" />
+        <ProjectReference Include="..\..\client\YandexCalendar.Net\YandexCalendar.Net.csproj"/>
+        <ProjectReference Include="..\SupernovaSchool.Application\SupernovaSchool.Application.csproj"/>
+        <ProjectReference Include="..\SupernovaSchool.Data\SupernovaSchool.Data.csproj"/>
+        <ProjectReference Include="..\SupernovaSchool.Telegram\SupernovaSchool.Telegram.csproj"/>
     </ItemGroup>
 
 </Project>

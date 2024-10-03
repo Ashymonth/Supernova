@@ -9,6 +9,6 @@ public class YandexCalendarClient : IYandexCalendarClient
     }
 
     public ICalendarResource CalendarResource { get; }
-    
+
     public IEventsResource EventsResource { get; set; }
 }

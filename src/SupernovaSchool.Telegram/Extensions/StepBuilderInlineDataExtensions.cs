@@ -25,7 +25,7 @@ public static class StepBuilderInlineDataExtensions
         var step = builder.Then<SendMessageWithOptionsToUser>();
         return SendVariantsInternal(step, message, getVariants);
     }
-    
+
     public static IStepBuilder<TData, SendMessageWithOptionsToUser> SendVariants<TData>(
         this IWorkflowBuilder<TData> builder, string message, Expression<Func<TData, string[]>> getVariants)
         where TData : IUserStep
@@ -33,7 +33,7 @@ public static class StepBuilderInlineDataExtensions
         var step = builder.Then<SendMessageWithOptionsToUser>();
         return SendVariantsInternal(step, message, getVariants);
     }
-    
+
     public static IStepBuilder<TData, SendMessageWithOptionsToUser> SendVariantsPage<TData>(
         this IWorkflowBuilder<TData> builder, string message, Expression<Func<TData, string[]>> getVariants)
         where TData : MessagePaginator, IUserStep

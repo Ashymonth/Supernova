@@ -15,16 +15,16 @@ public class SendInitialMessageToUserStep : IStepBody, IUserStep
         _client = client;
     }
 
-    public string UserId { get; set; } = null!;
-    
     public string Message { get; set; } = null!;
-    
+
     public async Task<ExecutionResult> RunAsync(IStepExecutionContext context)
     {
         var message = string.Format(InitialMessageTemplate, Message);
 
         await _client.SendTextMessageAsync(UserId, message, cancellationToken: context.CancellationToken);
-        
+
         return ExecutionResult.Next();
     }
+
+    public string UserId { get; set; } = null!;
 }

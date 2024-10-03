@@ -7,11 +7,10 @@ namespace SupernovaSchool.Telegram.Workflows.MyAppointments;
 
 public class DeleteMyAppointmentsWorkflowData : IUserStep
 {
-    public string UserId { get; set; } = null!;
-
     public IReadOnlyCollection<StudentAppointmentInfo> StudentAppointmentInfo { get; set; } = [];
 
     public DateTime AppointmentDateToDelete { get; set; }
+    public string UserId { get; set; } = null!;
 
     public InlineKeyboardButton[] CreateButtonsToDeleteAppointment()
     {

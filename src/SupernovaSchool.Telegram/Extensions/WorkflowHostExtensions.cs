@@ -9,7 +9,7 @@ internal static class WorkflowHostExtensions
     private static readonly Dictionary<UpdateType, string> EventMap = new()
     {
         [UpdateType.Message] = "UserMessage",
-        [UpdateType.CallbackQuery] = "CallbackMessage",
+        [UpdateType.CallbackQuery] = "CallbackMessage"
     };
 
     public static async Task PublishUserMessageAsync(this IWorkflowHost workflowHost, UpdateType updateType, string

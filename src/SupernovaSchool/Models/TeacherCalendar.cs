@@ -30,9 +30,7 @@ public class TeacherCalendar
         {
             if (IsSlotAfterCurrentTime(meetingDay, slotStart, today) &&
                 !IsSlotReserved(slotStart, reservedSlots))
-            {
                 result.Add(new TimeRange(slotStart, slotStart.Add(SlotInterval)));
-            }
 
             slotStart = slotStart.Add(SlotInterval);
         }
@@ -43,10 +41,7 @@ public class TeacherCalendar
     // Checks if the slot is after the current time.
     private static bool IsSlotAfterCurrentTime(DateTime meetingDay, TimeOnly slotStart, DateTime today)
     {
-        if (meetingDay.Date < today.Date)
-        {
-            return false;
-        }
+        if (meetingDay.Date < today.Date) return false;
 
         return !(meetingDay.Date == today.Date && slotStart.ToTimeSpan() <= today.TimeOfDay);
     }
@@ -57,15 +52,9 @@ public class TeacherCalendar
         // Iterate through the sorted reserved slots and check if the slot overlaps with any reserved slot.
         foreach (var reservedSlot in reservedSlots)
         {
-            if (slotStart < reservedSlot.Start)
-            {
-                break;
-            }
+            if (slotStart < reservedSlot.Start) break;
 
-            if (slotStart >= reservedSlot.Start && slotStart < reservedSlot.End)
-            {
-                return true;
-            }
+            if (slotStart >= reservedSlot.Start && slotStart < reservedSlot.End) return true;
         }
 
         return false;

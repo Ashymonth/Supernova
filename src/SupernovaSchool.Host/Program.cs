@@ -25,11 +25,15 @@ builder.Services.AddSingleton<IDateTimeProvider, DefaultDateTimeProvider>();
 builder.Services.AddTransient<IAppointmentService, AppointmentService>();
 builder.Services.AddTransient<ITeacherService, TeacherService>();
 builder.Services.AddTransient<IStudentService, StudentService>();
+builder.Services.AddTransient<IEventService, EventService>();
+builder.Services.AddTransient<ICalendarService, CalendarService>();
+
+builder.Services.AddMemoryCache();
 
 builder.Services.AddTelegramBot(builder.Configuration.GetValue<string>("Token")!);
 
 builder.Services.YandexCalendarClient();
- 
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())

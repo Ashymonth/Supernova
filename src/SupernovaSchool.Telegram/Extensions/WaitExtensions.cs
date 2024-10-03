@@ -25,7 +25,7 @@ internal static class WaitExtensions
     {
         return builder.WaitForInternal("CallbackMessage", dataProperty, dataConverter);
     }
-    
+
     private static IStepBuilder<TData, WaitFor> WaitForInternal<TData, TStep, TOutput>(
         this IStepBuilder<TData, TStep> builder,
         string eventName,
@@ -37,5 +37,5 @@ internal static class WaitExtensions
         return builder
             .WaitFor(eventName, data => data.UserId, _ => DateTime.UtcNow)
             .Output(dataProperty, step => dataConverter != null ? dataConverter(step.EventData) : step.EventData);
-    } 
+    }
 }

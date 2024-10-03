@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SupernovaSchool.Telegram.Extensions;
 using SupernovaSchool.Telegram.Steps;
-using SupernovaSchool.Telegram.Workflows;
 using SupernovaSchool.Telegram.Workflows.CreateAppointment;
 using SupernovaSchool.Telegram.Workflows.MyAppointments;
 using SupernovaSchool.Telegram.Workflows.RegisterStudent;
@@ -18,9 +17,9 @@ namespace SupernovaSchool.Telegram;
 public class TelegramHostedService : IHostedService
 {
     private static readonly ConcurrentDictionary<string, string> UserIdToWorkflowIdMap = new();
+    private readonly IServiceProvider _serviceProvider;
 
     private readonly ITelegramBotClient _telegramBotClient;
-    private readonly IServiceProvider _serviceProvider;
 
     public TelegramHostedService(ITelegramBotClient telegramBotClient, IServiceProvider serviceProvider)
     {
@@ -33,7 +32,7 @@ public class TelegramHostedService : IHostedService
         await _telegramBotClient.SetMyCommandsAsync([
             new BotCommand { Command = Commands.CreateAppointmentCommand, Description = "Записаться к психологу" },
             new BotCommand { Command = Commands.DeleteAppointmentCommand, Description = "Отменить запись к психологу" },
-            new BotCommand { Command = Commands.RegisterAsStudentCommand, Description = "Зарегистрироваться" },
+            new BotCommand { Command = Commands.RegisterAsStudentCommand, Description = "Зарегистрироваться" }
         ], cancellationToken: cancellationToken);
 
         await _telegramBotClient.ReceiveAsync(async (client, update, arg3) =>
@@ -51,9 +50,7 @@ public class TelegramHostedService : IHostedService
                 {
                     case "Выйти":
                         if (UserIdToWorkflowIdMap.TryRemove(userId!, out var workflowId))
-                        {
                             await workflowHost.TerminateWorkflow(workflowId);
-                        }
 
                         await _telegramBotClient.SendTextMessageAsync(long.Parse(userId!), "Вы завершили команду",
                             cancellationToken: cancellationToken);

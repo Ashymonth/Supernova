@@ -9,10 +9,12 @@ public static class ServiceCollectionExtensions
     public static void YandexCalendarClient(this IServiceCollection services)
     {
         services.AddHttpClient<IEventsResource, EventsResource>()
-            .ConfigureHttpClient(client => client.BaseAddress = new Uri(BaseUrl));
+            .ConfigureHttpClient(client => client.BaseAddress = new Uri(BaseUrl))
+            .AddStandardHedgingHandler();
 
         services.AddHttpClient<ICalendarResource, CalendarResource>()
-            .ConfigureHttpClient(client => client.BaseAddress = new Uri(BaseUrl));
+            .ConfigureHttpClient(client => client.BaseAddress = new Uri(BaseUrl))
+            .AddStandardResilienceHandler();
 
         services.AddScoped<IYandexCalendarClient, YandexCalendarClient>();
     }

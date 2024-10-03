@@ -19,7 +19,7 @@ public class SendTeacherListStep : IStepBody
     }
 
     public string UserId { get; set; } = null!;
-    
+
     public async Task<ExecutionResult> RunAsync(IStepExecutionContext context)
     {
         var teachers = await _teacherRepository.ListAsync();
@@ -29,7 +29,7 @@ public class SendTeacherListStep : IStepBody
 
         await _telegramBotClient.SendTextMessageAsync(UserId, "Список сотрудников",
             replyMarkup: new InlineKeyboardMarkup(buttons), cancellationToken: context.CancellationToken);
-        
+
         return ExecutionResult.Next();
     }
 }

@@ -14,14 +14,15 @@ public class SendMessageToUser : IStepBody, IUserStep
         _telegramBotClient = telegramBotClient;
     }
 
-    public string UserId { get; set; } = default!;
-
     public string Message { get; set; } = default!;
 
     public async Task<ExecutionResult> RunAsync(IStepExecutionContext context)
     {
-        var message = await _telegramBotClient.SendTextMessageAsync(UserId, Message, replyMarkup: new ReplyKeyboardRemove());
+        var message =
+            await _telegramBotClient.SendTextMessageAsync(UserId, Message, replyMarkup: new ReplyKeyboardRemove());
 
         return ExecutionResult.Next();
     }
+
+    public string UserId { get; set; } = default!;
 }

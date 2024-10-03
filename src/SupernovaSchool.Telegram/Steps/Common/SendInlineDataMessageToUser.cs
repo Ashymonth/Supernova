@@ -14,8 +14,6 @@ public class SendInlineDataMessageToUser : IUserStep, IStepBody
         _telegramBotClient = telegramBotClient;
     }
 
-    public string UserId { get; set; } = null!;
-    
     public string Message { get; set; } = null!;
 
     public InlineKeyboardButton[] Options { get; set; } = [];
@@ -29,4 +27,6 @@ public class SendInlineDataMessageToUser : IUserStep, IStepBody
 
         return ExecutionResult.Next();
     }
+
+    public string UserId { get; set; } = null!;
 }

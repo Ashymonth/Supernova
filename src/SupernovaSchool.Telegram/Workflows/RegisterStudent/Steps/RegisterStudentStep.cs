@@ -1,6 +1,5 @@
-using SupernovaSchool.Abstractions.Repositories;
+using SupernovaSchool.Abstractions;
 using SupernovaSchool.Models;
-using SupernovaSchool.Specifications;
 using WorkflowCore.Interface;
 using WorkflowCore.Models;
 
@@ -8,11 +7,11 @@ namespace SupernovaSchool.Telegram.Workflows.RegisterStudent.Steps;
 
 public class RegisterStudentStep : IStepBody
 {
-    private readonly IRepository<Student> _studentRepository;
+    private readonly IStudentService _studentService;
 
-    public RegisterStudentStep(IRepository<Student> studentRepository)
+    public RegisterStudentStep(IStudentService studentService)
     {
-        _studentRepository = studentRepository;
+        _studentService = studentService;
     }
 
     public string UserId { get; set; } = null!;
@@ -26,21 +25,9 @@ public class RegisterStudentStep : IStepBody
         ArgumentException.ThrowIfNullOrWhiteSpace(UserId);
         ArgumentException.ThrowIfNullOrWhiteSpace(StudentName);
         ArgumentException.ThrowIfNullOrWhiteSpace(StudentClass);
-        
-        var existedStudent = await _studentRepository.FirstOrDefaultAsync(new StudentByIdSpecification(UserId));
 
-        if (existedStudent is null)
-        {
-            await _studentRepository.AddAsync(new Student { Id = UserId, Name = StudentName, Class = StudentClass },
-                context.CancellationToken);
-        }
-        else
-        {
-            existedStudent.Name = StudentName;
-            existedStudent.Class = StudentClass;
-        }
-
-        await _studentRepository.UnitOfWork.SaveChangesAsync(context.CancellationToken);
+        await _studentService.AddOrUpdateAsync(new Student { Id = UserId, Name = StudentName, Class = StudentClass },
+            context.CancellationToken);
 
         return ExecutionResult.Next();
     }
