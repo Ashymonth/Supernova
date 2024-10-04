@@ -9,6 +9,8 @@ using SupernovaSchool.Telegram.Extensions;
 using SupernovaSchool.Telegram.Workflows.CreateAppointment;
 using SupernovaSchool.Telegram.Workflows.MyAppointments;
 using SupernovaSchool.Telegram.Workflows.RegisterStudent;
+using UtilityBills.Aggregates;
+using UtilityBills.Host.Security;
 using WorkflowCore.Interface;
 using YandexCalendar.Net.Extensions;
 using IDateTimeProvider = SupernovaSchool.Abstractions.IDateTimeProvider;
@@ -20,6 +22,11 @@ builder.Services.AddDbContext<SupernovaSchoolDbContext>(optionsBuilder =>
 
 builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+builder.Services.AddSingleton<IPasswordProtector, PasswordProtector>();
+builder.Services.AddSingleton<ISecurityKeyProvider>(_ =>
+    new SecurityKeyProvider(builder.Configuration.GetValue<string>("SecurityConfig:SecretKey")!,
+        builder.Configuration.GetValue<string>("SecurityConfig:InitVector")!));
 
 builder.Services.AddSingleton<IDateTimeProvider, DefaultDateTimeProvider>();
 builder.Services.AddTransient<IAppointmentService, AppointmentService>();
@@ -36,14 +43,11 @@ builder.Services.YandexCalendarClient();
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
-{
-    var workflow = scope.ServiceProvider.GetRequiredService<IWorkflowHost>();
+var workflow = app.Services.GetRequiredService<IWorkflowHost>();
 
-    workflow.RegisterWorkflow<CreateAppointmentWorkflow, CreateAppointmentWorkflowData>();
-    workflow.RegisterWorkflow<RegisterStudentWorkflow, RegisterStudentWorkflowData>();
-    workflow.RegisterWorkflow<DeleteMyAppointmentsWorkflow, DeleteMyAppointmentsWorkflowData>();
-    workflow.Start();
-}
+workflow.RegisterWorkflow<CreateAppointmentWorkflow, CreateAppointmentWorkflowData>();
+workflow.RegisterWorkflow<RegisterStudentWorkflow, RegisterStudentWorkflowData>();
+workflow.RegisterWorkflow<DeleteMyAppointmentsWorkflow, DeleteMyAppointmentsWorkflowData>();
+workflow.Start();
 
 app.Run();

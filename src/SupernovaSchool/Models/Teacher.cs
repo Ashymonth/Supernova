@@ -1,3 +1,6 @@
+using System.ComponentModel.DataAnnotations;
+using UtilityBills.Aggregates.UtilityPaymentPlatformAggregate.ValueObjects;
+
 namespace SupernovaSchool.Models;
 
 public class Teacher
@@ -10,10 +13,10 @@ public class Teacher
     {
     }
 
-    private Teacher(string name, string email, string yandexCalendarPassword)
+    private Teacher(string name, string login, Password yandexCalendarPassword)
     {
         Name = name;
-        Email = email;
+        Login = login;
         YandexCalendarPassword = yandexCalendarPassword;
     }
 
@@ -25,17 +28,19 @@ public class Teacher
     /// <summary>
     ///     The teacher name.
     /// </summary>
+    [MaxLength(255)]
     public string Name { get; private set; }
 
     /// <summary>
     ///     The teacher email on yandex.
     /// </summary>
-    public string Email { get; private set; }
+    [MaxLength(255)]
+    public string Login { get; private set; }
 
     /// <summary>
     ///     A password to access yandex calendar.
     /// </summary>
-    public string YandexCalendarPassword { get; private set; }
+    public Password YandexCalendarPassword { get; private set; }
 
     /// <summary>
     ///     Create a new model of teacher.
@@ -45,11 +50,11 @@ public class Teacher
     /// <param name="yandexCalendarPassword">A password to access yandex calendar.</param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public static Teacher Create(string name, string email, string yandexCalendarPassword)
+    public static Teacher Create(string name, string email, Password yandexCalendarPassword)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentException.ThrowIfNullOrWhiteSpace(email);
-        ArgumentException.ThrowIfNullOrWhiteSpace(yandexCalendarPassword);
+        ArgumentNullException.ThrowIfNull(yandexCalendarPassword);
 
         return new Teacher(name, email, yandexCalendarPassword);
     }

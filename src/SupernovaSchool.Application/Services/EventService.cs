@@ -1,6 +1,7 @@
 using Ical.Net.CalendarComponents;
 using SupernovaSchool.Abstractions;
 using SupernovaSchool.Models;
+using UtilityBills.Aggregates;
 using YandexCalendar.Net;
 using YandexCalendar.Net.Models;
 
@@ -10,11 +11,14 @@ public class EventService : IEventService
 {
     private readonly ICalendarService _calendarService;
     private readonly IEventsResource _eventsResource;
+    private readonly IPasswordProtector _passwordProtector;
 
-    public EventService(ICalendarService calendarService, IEventsResource eventsResource)
+    public EventService(ICalendarService calendarService, IEventsResource eventsResource,
+        IPasswordProtector passwordProtector)
     {
         _calendarService = calendarService;
         _eventsResource = eventsResource;
+        _passwordProtector = passwordProtector;
     }
 
     public async Task CreateEventAsync(Teacher teacher, Appointment appointment,
@@ -50,9 +54,10 @@ public class EventService : IEventService
         await _eventsResource.DeleteEventAsync(GetCredentials(teacher), calendarUrl, eventId, ct);
     }
 
-    private static UserCredentials GetCredentials(Teacher teacher)
+    private UserCredentials GetCredentials(Teacher teacher)
     {
-        var userInfo = new UserCredentials(teacher.Email, teacher.YandexCalendarPassword);
+        var userInfo = new UserCredentials(teacher.Login,
+            teacher.YandexCalendarPassword.GetUnprotected(_passwordProtector));
 
         return userInfo;
     }

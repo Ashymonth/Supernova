@@ -29,7 +29,7 @@ public class RegisterStudentWorkflow : IWorkflow<RegisterStudentWorkflowData>
             })
             .SendMessageToUser("Обработка запроса...")
             .RegisterStudent()
-            .SendMessageToUser("Вы успешно зарегестрировались. Теперь вы можете записаться к психологу")
+            .SendMessageToUser("Вы успешно зарегистрировались. Теперь вы можете записаться к психологу")
             .EndWorkflow();
     }
 }

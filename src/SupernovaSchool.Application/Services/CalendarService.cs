@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Caching.Memory;
 using SupernovaSchool.Abstractions;
 using SupernovaSchool.Models;
+using UtilityBills.Aggregates;
 using YandexCalendar.Net;
 using YandexCalendar.Net.Models;
 
@@ -12,11 +13,14 @@ public class CalendarService : ICalendarService
 
     private readonly IMemoryCache _memoryCache;
     private readonly IYandexCalendarClient _yandexCalendarClient;
+    private readonly IPasswordProtector _passwordProtector;
 
-    public CalendarService(IMemoryCache memoryCache, IYandexCalendarClient yandexCalendarClient)
+    public CalendarService(IMemoryCache memoryCache, IYandexCalendarClient yandexCalendarClient,
+        IPasswordProtector passwordProtector)
     {
         _memoryCache = memoryCache;
         _yandexCalendarClient = yandexCalendarClient;
+        _passwordProtector = passwordProtector;
     }
 
     public async ValueTask<string> GetDefaultCalendarUrlAsync(Teacher teacher, CancellationToken ct = default)
@@ -34,9 +38,10 @@ public class CalendarService : ICalendarService
             }))!;
     }
 
-    private static UserCredentials GetCredentials(Teacher teacher)
+    private UserCredentials GetCredentials(Teacher teacher)
     {
-        var userInfo = new UserCredentials(teacher.Email, teacher.YandexCalendarPassword);
+        var userInfo = new UserCredentials(teacher.Login,
+            teacher.YandexCalendarPassword.GetUnprotected(_passwordProtector));
 
         return userInfo;
     }
