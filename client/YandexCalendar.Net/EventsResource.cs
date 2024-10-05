@@ -136,7 +136,7 @@ public class EventsResource : IEventsResource
         using var request = new HttpRequestMessage(HttpMethod.Delete, formattedUrl);
         request.SetCredentials(credentials);
 
-        using var response = await _httpClient.DeleteAsync(formattedUrl, ct);
+        using var response = await _httpClient.SendAsync(request,ct);
         response.EnsureSuccessStatusCode();
     }
 
