@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using SupernovaSchool.Telegram.Extensions;
 using SupernovaSchool.Telegram.Steps;
 using SupernovaSchool.Telegram.Workflows.CreateAppointment;
+using SupernovaSchool.Telegram.Workflows.CreateTeacher;
 using SupernovaSchool.Telegram.Workflows.MyAppointments;
 using SupernovaSchool.Telegram.Workflows.RegisterStudent;
 using Telegram.Bot;
@@ -54,6 +55,13 @@ public class TelegramHostedService : IHostedService
 
                         await _telegramBotClient.SendTextMessageAsync(long.Parse(userId!), "Вы завершили команду",
                             cancellationToken: cancellationToken);
+                        break;
+                    case Commands.CreateTeacherCommand:
+                        var createTeacherWorkflowId = await workflowHost.StartWorkflow(
+                            nameof(CreateTeacherWorkflow),
+                            new CreateTeacherWorkflowData { UserId = userId! });
+
+                        UserIdToWorkflowIdMap.TryAdd(userId!, createTeacherWorkflowId);
                         break;
                     case Commands.DeleteAppointmentCommand:
                         var deleteAppointmentWorkflowId = await workflowHost.StartWorkflow(

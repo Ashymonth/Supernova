@@ -10,12 +10,20 @@ public static class ServiceCollectionExtensions
     {
         services.AddHttpClient<IEventsResource, EventsResource>()
             .ConfigureHttpClient(client => client.BaseAddress = new Uri(BaseUrl))
-            .AddStandardHedgingHandler();
+            .AddHttpMessageHandler<AuthenticationDelegateHandler>()
+            .AddStandardResilienceHandler();
 
         services.AddHttpClient<ICalendarResource, CalendarResource>()
             .ConfigureHttpClient(client => client.BaseAddress = new Uri(BaseUrl))
+            .AddHttpMessageHandler<AuthenticationDelegateHandler>()
+            .AddStandardResilienceHandler();
+        
+        services.AddHttpClient<IAuthorizationResource, AuthorizationResource>()
+            .ConfigureHttpClient(client => client.BaseAddress = new Uri(BaseUrl))
+            .AddHttpMessageHandler<AuthenticationDelegateHandler>()
             .AddStandardResilienceHandler();
 
+        services.AddTransient<AuthenticationDelegateHandler>();
         services.AddScoped<IYandexCalendarClient, YandexCalendarClient>();
     }
 }

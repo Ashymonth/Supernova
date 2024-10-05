@@ -2,6 +2,7 @@ using Microsoft.Extensions.Caching.Memory;
 using SupernovaSchool.Abstractions;
 using SupernovaSchool.Abstractions.Repositories;
 using SupernovaSchool.Models;
+using SupernovaSchool.Specifications;
 
 namespace SupernovaSchool.Application.Services;
 
@@ -20,13 +21,16 @@ public class StudentService : IStudentService
 
     public async Task AddOrUpdateAsync(Student student, CancellationToken ct = default)
     {
-        if (!_memoryCache.TryGetValue(CreateCacheKey(student.Id), out Student? existedStudent))
+        var existedStudent = await _studentRepository.GetByIdAsync(student.Id, ct);
+        
+        if (existedStudent is null)
         {
+            existedStudent = student;
             await _studentRepository.AddAsync(student, ct);
         }
         else
         {
-            existedStudent!.Name = student.Name;
+            existedStudent.Name = student.Name;
             existedStudent.Class = student.Class;
             _studentRepository.Update(existedStudent);
         }
