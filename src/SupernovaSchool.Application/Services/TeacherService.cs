@@ -29,7 +29,10 @@ public class TeacherService : ITeacherService
 
     public async Task<Teacher> CreateAsync(string name, string login, string password, CancellationToken ct = default)
     {
-        await _iAuthorizationResource.AuthorizeAsync(new UserCredentials(login, password), ct);
+        if (!await _iAuthorizationResource.AuthorizeAsync(new UserCredentials(login, password), ct))
+        {
+            throw new InvalidOperationException("Invalid login or password.");
+        }
         
         var teacher = Teacher.Create(name, login, Password.Create(password, _passwordProtector));
 

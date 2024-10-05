@@ -1,6 +1,7 @@
 using SupernovaSchool.Telegram.Extensions;
 using SupernovaSchool.Telegram.Workflows.CreateTeacher.Steps;
 using WorkflowCore.Interface;
+using WorkflowCore.Models;
 
 namespace SupernovaSchool.Telegram.Workflows.CreateTeacher;
 
@@ -30,6 +31,7 @@ public class CreateTeacherWorkflow : IWorkflow<CreateTeacherWorkflowData>
             .Input(step => step.Login, data => data.YandexCalendarLogin)
             .Input(step => step.Password, data => data.YandexCalendarPassword)
             .SendMessageToUser("Учитель успешно добавлен")
+            .OnError(WorkflowErrorHandling.Terminate)
             .EndWorkflow();
     }
 }
