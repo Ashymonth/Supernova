@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using SupernovaSchool.Abstractions;
 using SupernovaSchool.Models;
@@ -55,7 +56,7 @@ public class AppointmentService : IAppointmentService
         var teachers = await _teacherService.GetTeachersAsync(ct);
 
         var result = new ConcurrentBag<StudentAppointmentInfo>();
-
+        
         var resultTasks = teachers.Select(teacher =>
         {
             return _eventService.GetEventsAsync(teacher, from, to, ct)
@@ -84,7 +85,7 @@ public class AppointmentService : IAppointmentService
         });
 
         await Task.WhenAll(resultTasks);
-
+        
         return result;
     }
 
@@ -143,6 +144,7 @@ public class AppointmentService : IAppointmentService
 
     private List<TimeRange> FindAvailableTimeSlots(DateTime meetingDay, List<TimeSlot> reservedSlots)
     {
+        var sw = Stopwatch.GetTimestamp();
         // Sort reserved slots by their start time for easier comparison.
         reservedSlots.Sort((x, y) => x.Start.CompareTo(y.Start));
 
@@ -161,6 +163,7 @@ public class AppointmentService : IAppointmentService
             slotStart = slotStart.Add(SlotInterval);
         }
 
+        Console.WriteLine(Stopwatch.GetElapsedTime(sw));
         return result;
     }
 

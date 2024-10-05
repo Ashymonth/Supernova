@@ -29,7 +29,7 @@ public class CreateAppointmentWorkflowData : MessagePaginator, IUserStep
         var dashIndex = span.IndexOf('-');
         if (dashIndex == -1) return null;
 
-        if (!TimeOnly.TryParse(span[..4], out var from)) return null;
+        if (!TimeOnly.TryParse(span[..dashIndex], out var from)) return null;
 
         if (!TimeOnly.TryParse(span[(dashIndex + 1)..], out var to)) return null;
 

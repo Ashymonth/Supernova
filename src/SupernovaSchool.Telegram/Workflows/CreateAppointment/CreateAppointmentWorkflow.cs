@@ -28,7 +28,7 @@ public class CreateAppointmentWorkflow : IWorkflow<CreateAppointmentWorkflowData
             .SendInitialMessageToUser("Для записи к психологу выберите сотрудника из списка.")
             .Then<SendTeacherListStep>()
             .Input(step => step.UserId, data => data.UserId)
-            .WaitForUserInlineData(data => data.TeacherId, o => Guid.Parse((o as UserMessage)!.Message))
+            .WaitForUserInlineData(data => data.TeacherId, o => Guid.Parse((o as UserMessage)!.Message))    
             .SendAvailableMetingDates()
             .Then<SendAvailableTimeSlotsStep>()
             .Input(slots => slots.TeacherId, data => data.TeacherId)
@@ -42,6 +42,7 @@ public class CreateAppointmentWorkflow : IWorkflow<CreateAppointmentWorkflowData
                 .SendMessageToUser(
                     "На выбранный день нет доступх мест для записи. Выберите другой день или другого психолога", false)
                 .EndWorkflow())
+            .SendMessageToUser("Обработка запроса...")
             .Then<EnsureThatUserDosentRegisteredOnMeeting>()
             .Input(meeting => meeting.UserId, data => data.UserId)
             .Input(meeting => meeting.Date, data => DateOnly.Parse(data.PaginationMessage))
