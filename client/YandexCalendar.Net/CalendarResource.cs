@@ -2,13 +2,14 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Xml.Serialization;
 using YandexCalendar.Net.Contracts;
+using YandexCalendar.Net.Extensions;
 using YandexCalendar.Net.Models;
 
 namespace YandexCalendar.Net;
 
 public interface ICalendarResource
 {
-    Task<string> GetDefaultCalendarUrl(UserCredentials user, CancellationToken ct = default);
+    Task<string> GetDefaultCalendarUrl(UserCredentials credentials, CancellationToken ct = default);
 }
 
 public class CalendarResource : ICalendarResource
@@ -32,20 +33,17 @@ public class CalendarResource : ICalendarResource
         _httpClient = httpClient;
     }
 
-    public async Task<string> GetDefaultCalendarUrl(UserCredentials user, CancellationToken ct = default)
+    public async Task<string> GetDefaultCalendarUrl(UserCredentials credentials, CancellationToken ct = default)
     {
-        _httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Basic", user.ToBasic64Credentials());
+        var formattedCalendarUrl = string.Format(GetCalendarsUrlTemplate, credentials.UserName);
 
-        var formattedCalendarUrl = string.Format(GetCalendarsUrlTemplate, user.UserName);
-        var calendarListRequest = new HttpRequestMessage(new HttpMethod("PROPFIND"), formattedCalendarUrl)
-        {
-            Content = new StringContent(GetCalendarsRequestContent, Encoding.UTF8, "application/xml")
-        };
+        using var calendarListRequest = new HttpRequestMessage(new HttpMethod("PROPFIND"), formattedCalendarUrl);
+        calendarListRequest.Content = new StringContent(GetCalendarsRequestContent, Encoding.UTF8, "application/xml");
+        calendarListRequest.SetCredentials(credentials);
 
         calendarListRequest.Headers.Add("Depth", "1"); // to get all calendars
 
-        var calendarResponse = await _httpClient.SendAsync(calendarListRequest, ct);
+        using var calendarResponse = await _httpClient.SendAsync(calendarListRequest, ct);
 
         var xmlResponse = await calendarResponse.Content.ReadAsStringAsync(ct);
 
@@ -56,8 +54,9 @@ public class CalendarResource : ICalendarResource
 
         var result = multiStatus.Responses.FirstOrDefault(response => response.Href.Contains("events") &&
                                                                       response.Propstats.Any(propstat =>
-                                                                          propstat.Status == "HTTP/1.1 200 OK"));
+                                                                          propstat.Status == "HTTP/1.1 200 OK"))
+                     ?? throw new InvalidOperationException("No events found");
 
-        return result?.Href;
+        return result.Href;
     }
 }

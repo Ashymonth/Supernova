@@ -4,17 +4,18 @@ using System.Xml.Serialization;
 using Ical.Net;
 using Ical.Net.CalendarComponents;
 using YandexCalendar.Net.Contracts;
+using YandexCalendar.Net.Extensions;
 using YandexCalendar.Net.Models;
 
 namespace YandexCalendar.Net;
 
 public interface IEventsResource
 {
-    Task AddEventAsync(UserCredentials user, Appointment appointment, string calendarUrl,
+    Task AddEventAsync(UserCredentials credentials, Appointment appointment, string calendarUrl,
         string description,
         CancellationToken ct = default);
 
-    Task<IEnumerable<CalendarEvent>> GetEventsAsync(UserCredentials user, DateTime from, DateTime to,
+    Task<IEnumerable<CalendarEvent>> GetEventsAsync(UserCredentials credentials, DateTime from, DateTime to,
         string calendarUrl,
         CancellationToken ct = default);
 
@@ -66,15 +67,13 @@ public class EventsResource : IEventsResource
         _httpClient = httpClient;
     }
 
-    public async Task AddEventAsync(UserCredentials user, Appointment appointment, string calendarUrl,
+    public async Task AddEventAsync(UserCredentials credentials, Appointment appointment, string calendarUrl,
         string description,
         CancellationToken ct = default)
     {
-        ArgumentNullException.ThrowIfNull(user);
+        ArgumentNullException.ThrowIfNull(credentials);
         ArgumentException.ThrowIfNullOrWhiteSpace(calendarUrl);
-
-        _httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Basic", user.ToBasic64Credentials());
+        ArgumentException.ThrowIfNullOrWhiteSpace(description);
 
         var uniqueIdForRequest = Guid.NewGuid().ToString();
 
@@ -85,33 +84,36 @@ public class EventsResource : IEventsResource
 
         using var createEventRequest = new HttpRequestMessage(HttpMethod.Put, formattedUrl);
         createEventRequest.Content = new StringContent(eventInfo, Encoding.UTF8, "text/calendar");
+        createEventRequest.SetCredentials(credentials);
 
         // Send the request to add the event
-        var addEventResponse = await _httpClient.SendAsync(createEventRequest, ct);
+        using var addEventResponse = await _httpClient.SendAsync(createEventRequest, ct);
+        addEventResponse.EnsureSuccessStatusCode();
     }
 
-    public async Task<IEnumerable<CalendarEvent>> GetEventsAsync(UserCredentials user, DateTime from, DateTime to,
+    public async Task<IEnumerable<CalendarEvent>> GetEventsAsync(UserCredentials credentials, DateTime from,
+        DateTime to,
         string calendarUrl,
         CancellationToken ct = default)
     {
-        ArgumentNullException.ThrowIfNull(user);
-
-        _httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Basic", user.ToBasic64Credentials());
+        ArgumentNullException.ThrowIfNull(credentials);
+        ArgumentException.ThrowIfNullOrWhiteSpace(calendarUrl);
 
         var formattedRequest = string.Format(GetEventsUrlTemplate, CreateFormatedDate(from.ToUniversalTime()),
             CreateFormatedDate(to.ToUniversalTime()));
 
         using var reportRequest = new HttpRequestMessage(new HttpMethod("REPORT"), calendarUrl);
         reportRequest.Content = new StringContent(formattedRequest, Encoding.UTF8, "application/xml");
+        reportRequest.SetCredentials(credentials);
 
         // Set the depth header to "1" to retrieve all events in the specified time range
         reportRequest.Headers.Add("Depth", "1");
 
-        var reportResponse = await _httpClient.SendAsync(reportRequest, ct);
-
+        using var reportResponse = await _httpClient.SendAsync(reportRequest, ct);
+        reportResponse.EnsureSuccessStatusCode();
+        
         var xmlResponse = await reportResponse.Content.ReadAsStringAsync(ct);
-
+        
         var serializer = new XmlSerializer(typeof(CalendarResponse));
 
         using var reader = new StringReader(xmlResponse);
@@ -127,12 +129,11 @@ public class EventsResource : IEventsResource
         CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(credentials);
+        ArgumentException.ThrowIfNullOrEmpty(calendarUrl);
         ArgumentException.ThrowIfNullOrEmpty(eventId);
 
-        _httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Basic", credentials.ToBasic64Credentials());
-
         var formattedUrl = string.Format(CreateEventUrlTemplate, calendarUrl, eventId);
+        using var request = new HttpRequestMessage(HttpMethod.Delete, formattedUrl);
 
         using var response = await _httpClient.DeleteAsync(formattedUrl, ct);
         response.EnsureSuccessStatusCode();
