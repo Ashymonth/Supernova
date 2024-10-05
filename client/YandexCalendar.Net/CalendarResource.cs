@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using System.Text;
 using System.Xml.Serialization;
 using YandexCalendar.Net.Contracts;
