@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using SupernovaSchool.Telegram.Steps.Common;
 using SupernovaSchool.Telegram.Workflows.CreateAppointment.Steps;
+using SupernovaSchool.Telegram.Workflows.CreateTeacher.Steps;
 using SupernovaSchool.Telegram.Workflows.MyAppointments.Steps;
 using SupernovaSchool.Telegram.Workflows.RegisterStudent.Steps;
 using Telegram.Bot;
@@ -32,6 +33,9 @@ public static class ServiceCollectionExtensions
         services.AddTransient<LoadMyAppointmentsStep>();
         services.AddTransient<SendAppointmentToDelete>();
         services.AddTransient<DeleteAppointmentStep>();
+        
+        services.AddTransient<EnsureThatUserIsAdminStep>();
+        services.AddTransient<CreateTeacherStep>();
 
         services.AddSingleton<ITelegramBotClient>(_ => new TelegramBotClient(botToken));
         services.AddHostedService<TelegramHostedService>();

@@ -46,16 +46,16 @@ public class Teacher
     ///     Create a new model of teacher.
     /// </summary>
     /// <param name="name">Teacher name.</param>
-    /// <param name="email">Teacher email on yandex</param>
+    /// <param name="login">Teacher login on yandex</param>
     /// <param name="yandexCalendarPassword">A password to access yandex calendar.</param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public static Teacher Create(string name, string email, Password yandexCalendarPassword)
+    public static Teacher Create(string name, string login, Password yandexCalendarPassword)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
-        ArgumentException.ThrowIfNullOrWhiteSpace(email);
+        ArgumentException.ThrowIfNullOrWhiteSpace(login);
         ArgumentNullException.ThrowIfNull(yandexCalendarPassword);
 
-        return new Teacher(name, email, yandexCalendarPassword);
+        return new Teacher(name, login, yandexCalendarPassword);
     }
 }

@@ -5,8 +5,10 @@ using SupernovaSchool.Abstractions.Repositories;
 using SupernovaSchool.Application.Services;
 using SupernovaSchool.Data;
 using SupernovaSchool.Data.Repositories;
+using SupernovaSchool.Host;
 using SupernovaSchool.Telegram.Extensions;
 using SupernovaSchool.Telegram.Workflows.CreateAppointment;
+using SupernovaSchool.Telegram.Workflows.CreateTeacher;
 using SupernovaSchool.Telegram.Workflows.MyAppointments;
 using SupernovaSchool.Telegram.Workflows.RegisterStudent;
 using UtilityBills.Aggregates;
@@ -28,6 +30,10 @@ builder.Services.AddSingleton<ISecurityKeyProvider>(_ =>
     new SecurityKeyProvider(builder.Configuration.GetValue<string>("SecurityConfig:SecretKey")!,
         builder.Configuration.GetValue<string>("SecurityConfig:InitVector")!));
 
+builder.Services.AddSingleton<IAdminsProvider>(_ => new TelegramAdminsProvider(
+    builder.Configuration.GetSection("AdminUserIdsFromTelegram").Get<HashSet<string>>() ??
+    throw new InvalidOperationException("Admin user ids are not provided")));
+
 builder.Services.AddSingleton<IDateTimeProvider, DefaultDateTimeProvider>();
 builder.Services.AddTransient<IAppointmentService, AppointmentService>();
 builder.Services.AddTransient<ITeacherService, TeacherService>();
@@ -48,6 +54,7 @@ var workflow = app.Services.GetRequiredService<IWorkflowHost>();
 workflow.RegisterWorkflow<CreateAppointmentWorkflow, CreateAppointmentWorkflowData>();
 workflow.RegisterWorkflow<RegisterStudentWorkflow, RegisterStudentWorkflowData>();
 workflow.RegisterWorkflow<DeleteMyAppointmentsWorkflow, DeleteMyAppointmentsWorkflowData>();
+workflow.RegisterWorkflow<CreateTeacherWorkflow, CreateTeacherWorkflowData>();
 workflow.Start();
 
 app.Run();
