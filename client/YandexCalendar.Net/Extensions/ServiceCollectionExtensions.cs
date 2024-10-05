@@ -15,7 +15,13 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<ICalendarResource, CalendarResource>()
             .ConfigureHttpClient(client => client.BaseAddress = new Uri(BaseUrl))
             .AddStandardResilienceHandler();
+        
+        services.AddHttpClient<IAuthorizationResource, AuthorizationResource>()
+            .ConfigureHttpClient(client => client.BaseAddress = new Uri(BaseUrl))
+            .AddHttpMessageHandler<AuthenticationDelegateHandler>()
+            .AddStandardResilienceHandler();
 
+        services.AddTransient<AuthenticationDelegateHandler>();
         services.AddScoped<IYandexCalendarClient, YandexCalendarClient>();
     }
 }
