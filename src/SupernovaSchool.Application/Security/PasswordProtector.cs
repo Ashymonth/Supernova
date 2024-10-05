@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
-using UtilityBills.Aggregates;
+using SupernovaSchool.Abstractions.Security;
 
-namespace UtilityBills.Host.Security;
+namespace SupernovaSchool.Application.Security;
 
 public class PasswordProtector : IPasswordProtector
 {

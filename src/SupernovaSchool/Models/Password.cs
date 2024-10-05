@@ -1,5 +1,7 @@
 
-namespace UtilityBills.Aggregates.UtilityPaymentPlatformAggregate.ValueObjects;
+using SupernovaSchool.Abstractions.Security;
+
+namespace SupernovaSchool.Models;
 
 public record Password
 {

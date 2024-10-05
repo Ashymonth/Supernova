@@ -1,7 +1,7 @@
 using System.Text;
-using UtilityBills.Aggregates;
+using SupernovaSchool.Abstractions.Security;
 
-namespace UtilityBills.Host.Security;
+namespace SupernovaSchool.Application.Security;
 
 public class SecurityKeyProvider : ISecurityKeyProvider
 {

@@ -1,9 +1,8 @@
 using Microsoft.Extensions.Caching.Memory;
 using SupernovaSchool.Abstractions;
 using SupernovaSchool.Abstractions.Repositories;
+using SupernovaSchool.Abstractions.Security;
 using SupernovaSchool.Models;
-using UtilityBills.Aggregates;
-using UtilityBills.Aggregates.UtilityPaymentPlatformAggregate.ValueObjects;
 using YandexCalendar.Net;
 using YandexCalendar.Net.Models;
 

@@ -1,7 +1,7 @@
 using Ical.Net.CalendarComponents;
 using SupernovaSchool.Abstractions;
+using SupernovaSchool.Abstractions.Security;
 using SupernovaSchool.Models;
-using UtilityBills.Aggregates;
 using YandexCalendar.Net;
 using YandexCalendar.Net.Models;
 

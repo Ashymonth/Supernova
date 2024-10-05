@@ -1,4 +1,4 @@
-namespace UtilityBills.Aggregates;
+namespace SupernovaSchool.Abstractions.Security;
 
 /// <summary>
 /// Provide access to a security key.

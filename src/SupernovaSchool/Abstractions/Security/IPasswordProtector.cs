@@ -1,4 +1,4 @@
-namespace UtilityBills.Aggregates;
+namespace SupernovaSchool.Abstractions.Security;
 
 public interface IPasswordProtector
 {
