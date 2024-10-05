@@ -1,12 +1,6 @@
-using System.Collections.Concurrent;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SupernovaSchool.Telegram.Extensions;
 using SupernovaSchool.Telegram.Steps;
-using SupernovaSchool.Telegram.Workflows.CreateAppointment;
-using SupernovaSchool.Telegram.Workflows.CreateTeacher;
-using SupernovaSchool.Telegram.Workflows.MyAppointments;
-using SupernovaSchool.Telegram.Workflows.RegisterStudent;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
@@ -17,24 +11,23 @@ namespace SupernovaSchool.Telegram;
 
 public class TelegramHostedService : IHostedService
 {
-    private static readonly ConcurrentDictionary<string, string> UserIdToWorkflowIdMap = new();
-    private readonly IServiceProvider _serviceProvider;
+    private const string ExistCommandName = "Выйти";
 
     private readonly ITelegramBotClient _telegramBotClient;
- 
+    private readonly IWorkflowHost _workflowHost;
+    private readonly CommandRegistry _commandRegistry;
+    private readonly IUserSessionStorage _userSessionStorage;
+    private readonly IConversationHistory _conversationHistory;
 
-    private readonly Dictionary<string, Func<string, IUserStep>> _commandNames = new()
-    {
-        [Commands.CreateTeacherCommand] = userId => new CreateTeacherWorkflowData { UserId = userId },
-        [Commands.CreateAppointmentCommand] = userId => new CreateAppointmentWorkflowData { UserId = userId },
-        [Commands.DeleteAppointmentCommand] = userId => new DeleteMyAppointmentsWorkflowData { UserId = userId },
-        [Commands.RegisterAsStudentCommand] = userId => new RegisterStudentWorkflowData { UserId = userId },
-    };
-
-    public TelegramHostedService(ITelegramBotClient telegramBotClient, IServiceProvider serviceProvider)
+    public TelegramHostedService(ITelegramBotClient telegramBotClient, IWorkflowHost workflowHost,
+        CommandRegistry commandRegistry, IUserSessionStorage userSessionStorage,
+        IConversationHistory conversationHistory)
     {
         _telegramBotClient = telegramBotClient;
-        _serviceProvider = serviceProvider;
+        _workflowHost = workflowHost;
+        _commandRegistry = commandRegistry;
+        _userSessionStorage = userSessionStorage;
+        _conversationHistory = conversationHistory;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -49,35 +42,36 @@ public class TelegramHostedService : IHostedService
             {
                 var message = update.Message?.Text ?? update.CallbackQuery?.Data!;
                 var messageId = update.Message?.MessageId ?? update.CallbackQuery?.Message?.MessageId!;
-                var userId = update.Message?.From?.Id.ToString() ?? update.CallbackQuery?.From.Id.ToString();
+                var userId = update.Message?.From?.Id.ToString() ?? update.CallbackQuery?.From.Id.ToString()!;
 
                 await _telegramBotClient.SendChatActionAsync(long.Parse(userId!), ChatAction.Typing,
                     cancellationToken: cancellationToken);
-                
-                var workflowHost = _serviceProvider.GetRequiredService<IWorkflowHost>();
-                if (_commandNames.TryGetValue(message, out var workflowDataFactory))
-                {
-                    var workflowId = await workflowHost.StartWorkflow(message, workflowDataFactory(userId!));
 
-                    UserIdToWorkflowIdMap.TryAdd(userId, workflowId);
+                _conversationHistory.AddMessage(userId, messageId.Value);
+
+                if (string.Equals(ExistCommandName, message, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    await _userSessionStorage.TerminateWorkflow(userId);
+                    await _telegramBotClient.SendTextMessageAsync(userId, "Команда отменена",
+                        cancellationToken: cancellationToken);
                     return;
                 }
-                
-                switch (message)
-                {
-                    case "Выйти":
-                        if (UserIdToWorkflowIdMap.TryRemove(userId!, out var workflowId))
-                            await workflowHost.TerminateWorkflow(workflowId);
 
-                        await _telegramBotClient.SendTextMessageAsync(long.Parse(userId!), "Вы завершили команду",
+                if (_commandRegistry.TryGetWorkflowByCommandName(message, out var workflowDataFactory))
+                {
+                    if (!await _userSessionStorage.StartWorkflow(userId, message, workflowDataFactory!(userId)))
+                    {
+                        await _telegramBotClient.SendTextMessageAsync(userId,
+                            "Нельзя вызвать новую команду, пока вы не завершили старую",
                             cancellationToken: cancellationToken);
-                        break;
-                    default:
-                        await workflowHost.PublishUserMessageAsync(update.Type, userId!,
-                            new UserMessage(message!, messageId!.Value));
-                        break;
+                    }
+
+                    return;
                 }
-            }, (client, exception, arg3) => Task.CompletedTask, new ReceiverOptions { ThrowPendingUpdates = true },
+
+                await _workflowHost.PublishUserMessageAsync(update.Type, userId,
+                    new UserMessage(message, messageId.Value));
+            }, (_, _, _) => Task.CompletedTask, new ReceiverOptions { ThrowPendingUpdates = true },
             cancellationToken);
     }
 

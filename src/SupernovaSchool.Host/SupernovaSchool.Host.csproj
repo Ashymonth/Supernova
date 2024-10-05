@@ -31,4 +31,8 @@
         <ProjectReference Include="..\SupernovaSchool.Telegram\SupernovaSchool.Telegram.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Services\" />
+    </ItemGroup>
+
 </Project>

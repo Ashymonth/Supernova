@@ -37,6 +37,10 @@ public static class ServiceCollectionExtensions
         services.AddTransient<EnsureThatUserIsAdminStep>();
         services.AddTransient<CreateTeacherStep>();
 
+        services.AddSingleton<IConversationHistory, ConversationHistory>();
+        services.AddSingleton<IUserSessionStorage, UserSessionStorage>();
+        services.AddSingleton<CommandRegistry>();
+        
         services.AddSingleton<ITelegramBotClient>(_ => new TelegramBotClient(botToken));
         services.AddHostedService<TelegramHostedService>();
     }
