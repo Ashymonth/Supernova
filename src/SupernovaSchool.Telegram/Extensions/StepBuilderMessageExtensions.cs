@@ -39,13 +39,14 @@ public static class StepBuilderMessageExtensions
     }
 
     public static IStepBuilder<TData, SendMessageToUser> SendMessageToUser<TData, TStep>(
-        this IStepBuilder<TData, TStep> builder, string message)
+        this IStepBuilder<TData, TStep> builder, string message, bool shouldBeDeleted = true)
         where TData : IUserStep where TStep : IStepBody
     {
         return builder
             .Then<SendMessageToUser>()
             .Input(step => step.UserId, data => data.UserId)
-            .Input(step => step.Message, _ => message);
+            .Input(step => step.Message, _ => message)
+            .Input(step => step.ShouldBeDeleted, step => shouldBeDeleted);
     }
 
     public static IStepBuilder<TData, SendMessageToUser> SendMessageToUser<TData>(

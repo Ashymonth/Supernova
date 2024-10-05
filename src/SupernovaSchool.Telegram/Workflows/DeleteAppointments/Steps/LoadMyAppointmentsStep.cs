@@ -6,7 +6,7 @@ using WorkflowCore.Interface;
 using WorkflowCore.Models;
 using IDateTimeProvider = SupernovaSchool.Abstractions.IDateTimeProvider;
 
-namespace SupernovaSchool.Telegram.Workflows.MyAppointments.Steps;
+namespace SupernovaSchool.Telegram.Workflows.DeleteAppointments.Steps;
 
 public class LoadMyAppointmentsStep : IStepBody, IUserStep
 {

@@ -8,7 +8,7 @@ namespace SupernovaSchool.Telegram.Workflows.CreateAppointment;
 
 public class CreateAppointmentWorkflow : IWorkflow<CreateAppointmentWorkflowData>
 {
-    public string Id => nameof(CreateAppointmentWorkflow);
+    public string Id => Commands.CreateAppointmentCommand;
 
     public int Version => 1;
 
@@ -20,12 +20,15 @@ public class CreateAppointmentWorkflow : IWorkflow<CreateAppointmentWorkflowData
             .Output(data => data.IsStudentRegistered, step => step.IsStudentRegistered)
             .If(data => !data.IsStudentRegistered).Do(workflowBuilder =>
                 workflowBuilder
-                    .SendMessageToUser("Сначала вы должна зарегистрироваться с помощью команды /register_as_student")
+                    .Then<CleanupStep>()
+                    .Input(step => step.UserId, data => data.UserId)
+                    .SendMessageToUser("Сначала вы должна зарегистрироваться с помощью команды /register_as_student",
+                        false)
                     .EndWorkflow())
             .SendInitialMessageToUser("Для записи к психологу выберите сотрудника из списка.")
             .Then<SendTeacherListStep>()
             .Input(step => step.UserId, data => data.UserId)
-            .WaitForUserInlineData(data => data.TeacherId, o => Guid.Parse((o as UserMessage)!.Message))
+            .WaitForUserInlineData(data => data.TeacherId, o => Guid.Parse((o as UserMessage)!.Message))    
             .SendAvailableMetingDates()
             .Then<SendAvailableTimeSlotsStep>()
             .Input(slots => slots.TeacherId, data => data.TeacherId)
@@ -34,16 +37,22 @@ public class CreateAppointmentWorkflow : IWorkflow<CreateAppointmentWorkflowData
             .If(data => data.AvailableTimeSlots.Length == 0)
             //
             .Do(workflowBuilder => workflowBuilder
+                .Then<CleanupStep>()
+                .Input(step => step.UserId, data => data.UserId)
                 .SendMessageToUser(
-                    "На выбранный день нет доступх мест для записи. Выберите другой день или другого психолога")
+                    "На выбранный день нет доступх мест для записи. Выберите другой день или другого психолога", false)
                 .EndWorkflow())
+            .SendMessageToUser("Обработка запроса...")
             .Then<EnsureThatUserDosentRegisteredOnMeeting>()
             .Input(meeting => meeting.UserId, data => data.UserId)
             .Input(meeting => meeting.Date, data => DateOnly.Parse(data.PaginationMessage))
             .Output(data => data.UserHasAppointment, user => user.HasAppointment)
             .If(data => data.UserHasAppointment).Do(workflowBuilder =>
-                workflowBuilder.SendMessageToUser(
-                        "У вас уже есть запись на этот день. На 1 день можно записать не больше 1 раза")
+                workflowBuilder
+                    .Then<CleanupStep>()
+                    .Input(step => step.UserId, data => data.UserId)
+                    .SendMessageToUser(
+                        "У вас уже есть запись на этот день. На 1 день можно записать не больше 1 раза", false)
                     .EndWorkflow())
             .SendVariants("Выберите время для записи",
                 data => data.AvailableTimeSlots.Select(slot => $"{slot.Start} -{slot.End}").ToArray())
@@ -64,7 +73,9 @@ public class CreateAppointmentWorkflow : IWorkflow<CreateAppointmentWorkflowData
             .Input(appointment => appointment.TeacherId, data => data.TeacherId)
             .Input(appointment => appointment.AppointmentSlot, data => data.GetTimeSlot())
             .Input(appointment => appointment.AppointmentDate, data => data.AppointmentDate)
-            .SendMessageToUser("Вы успешно записаны")
+            .Then<CleanupStep>()
+            .Input(step => step.UserId, data => data.UserId)
+            .SendMessageToUser("Вы успешно записаны", false)
             .EndWorkflow();
     }
 }

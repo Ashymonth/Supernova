@@ -1,13 +1,13 @@
 using SupernovaSchool.Telegram.Extensions;
 using SupernovaSchool.Telegram.Steps;
-using SupernovaSchool.Telegram.Workflows.MyAppointments.Steps;
+using SupernovaSchool.Telegram.Workflows.DeleteAppointments.Steps;
 using WorkflowCore.Interface;
 
-namespace SupernovaSchool.Telegram.Workflows.MyAppointments;
+namespace SupernovaSchool.Telegram.Workflows.DeleteAppointments;
 
 public class DeleteMyAppointmentsWorkflow : IWorkflow<DeleteMyAppointmentsWorkflowData>
 {
-    public string Id => nameof(DeleteMyAppointmentsWorkflow);
+    public string Id => Commands.DeleteAppointmentCommand;
 
     public int Version => 1;
 
@@ -30,7 +30,9 @@ public class DeleteMyAppointmentsWorkflow : IWorkflow<DeleteMyAppointmentsWorkfl
             .Then<DeleteAppointmentStep>()
             .Input(step => step.UserId, data => data.UserId)
             .Input(step => step.AppointmentDay, data => data.AppointmentDateToDelete)
-            .SendMessageToUser("Запись успешно удалена")
+            .Then<CleanupStep>()
+            .Input(step => step.UserId, data => data.UserId)
+            .SendMessageToUser("Запись успешно удалена", false)
             .EndWorkflow();
     }
 }

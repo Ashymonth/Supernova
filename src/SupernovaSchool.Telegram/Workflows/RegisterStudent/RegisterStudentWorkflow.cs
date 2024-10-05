@@ -1,4 +1,5 @@
 using SupernovaSchool.Telegram.Extensions;
+using SupernovaSchool.Telegram.Steps;
 using SupernovaSchool.Telegram.Steps.Common;
 using SupernovaSchool.Telegram.Workflows.RegisterStudent.Extensions;
 using WorkflowCore.Interface;
@@ -12,7 +13,7 @@ public class RegisterStudentWorkflow : IWorkflow<RegisterStudentWorkflowData>
         ..Enumerable.Range(5, 7).Select(i => i.ToString())
     ];
 
-    public string Id => nameof(RegisterStudentWorkflow);
+    public string Id => Commands.RegisterAsStudentCommand;
 
     public int Version => 1;
 
@@ -29,7 +30,9 @@ public class RegisterStudentWorkflow : IWorkflow<RegisterStudentWorkflowData>
             })
             .SendMessageToUser("Обработка запроса...")
             .RegisterStudent()
-            .SendMessageToUser("Вы успешно зарегистрировались. Теперь вы можете записаться к психологу")
+            .Then<CleanupStep>()
+            .Input(step => step.UserId, data => data.UserId)
+            .SendMessageToUser("Вы успешно зарегистрировались. Теперь вы можете записаться к психологу", false)
             .EndWorkflow();
     }
 }
