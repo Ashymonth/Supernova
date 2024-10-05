@@ -21,6 +21,15 @@ public class TelegramHostedService : IHostedService
     private readonly IServiceProvider _serviceProvider;
 
     private readonly ITelegramBotClient _telegramBotClient;
+ 
+
+    private readonly Dictionary<string, Func<string, IUserStep>> _commandNames = new()
+    {
+        [Commands.CreateTeacherCommand] = userId => new CreateTeacherWorkflowData { UserId = userId },
+        [Commands.CreateAppointmentCommand] = userId => new CreateAppointmentWorkflowData { UserId = userId },
+        [Commands.DeleteAppointmentCommand] = userId => new DeleteMyAppointmentsWorkflowData { UserId = userId },
+        [Commands.RegisterAsStudentCommand] = userId => new RegisterStudentWorkflowData { UserId = userId },
+    };
 
     public TelegramHostedService(ITelegramBotClient telegramBotClient, IServiceProvider serviceProvider)
     {
@@ -38,15 +47,22 @@ public class TelegramHostedService : IHostedService
 
         await _telegramBotClient.ReceiveAsync(async (client, update, arg3) =>
             {
-                var message = update.Message?.Text ?? update.CallbackQuery?.Data;
+                var message = update.Message?.Text ?? update.CallbackQuery?.Data!;
                 var messageId = update.Message?.MessageId ?? update.CallbackQuery?.Message?.MessageId!;
                 var userId = update.Message?.From?.Id.ToString() ?? update.CallbackQuery?.From.Id.ToString();
 
-                var workflowHost = _serviceProvider.GetRequiredService<IWorkflowHost>();
-                using var scope = _serviceProvider.CreateScope();
-
                 await _telegramBotClient.SendChatActionAsync(long.Parse(userId!), ChatAction.Typing,
                     cancellationToken: cancellationToken);
+                
+                var workflowHost = _serviceProvider.GetRequiredService<IWorkflowHost>();
+                if (_commandNames.TryGetValue(message, out var workflowDataFactory))
+                {
+                    var workflowId = await workflowHost.StartWorkflow(message, workflowDataFactory(userId!));
+
+                    UserIdToWorkflowIdMap.TryAdd(userId, workflowId);
+                    return;
+                }
+                
                 switch (message)
                 {
                     case "Выйти":
@@ -55,31 +71,6 @@ public class TelegramHostedService : IHostedService
 
                         await _telegramBotClient.SendTextMessageAsync(long.Parse(userId!), "Вы завершили команду",
                             cancellationToken: cancellationToken);
-                        break;
-                    case Commands.CreateTeacherCommand:
-                        var createTeacherWorkflowId = await workflowHost.StartWorkflow(
-                            nameof(CreateTeacherWorkflow),
-                            new CreateTeacherWorkflowData { UserId = userId! });
-
-                        UserIdToWorkflowIdMap.TryAdd(userId!, createTeacherWorkflowId);
-                        break;
-                    case Commands.DeleteAppointmentCommand:
-                        var deleteAppointmentWorkflowId = await workflowHost.StartWorkflow(
-                            nameof(DeleteMyAppointmentsWorkflow),
-                            new DeleteMyAppointmentsWorkflowData { UserId = userId! });
-
-                        UserIdToWorkflowIdMap.TryAdd(userId!, deleteAppointmentWorkflowId);
-                        break;
-                    case Commands.RegisterAsStudentCommand:
-                        var registerWorkflowId = await workflowHost.StartWorkflow(nameof(RegisterStudentWorkflow),
-                            new RegisterStudentWorkflowData { UserId = userId! });
-
-                        UserIdToWorkflowIdMap.TryAdd(userId!, registerWorkflowId);
-                        break;
-                    case Commands.CreateAppointmentCommand:
-                        var appointmentWorkflowId = await workflowHost.StartWorkflow(nameof(CreateAppointmentWorkflow),
-                            new CreateAppointmentWorkflowData { UserId = userId! });
-                        UserIdToWorkflowIdMap.TryAdd(userId!, appointmentWorkflowId);
                         break;
                     default:
                         await workflowHost.PublishUserMessageAsync(update.Type, userId!,

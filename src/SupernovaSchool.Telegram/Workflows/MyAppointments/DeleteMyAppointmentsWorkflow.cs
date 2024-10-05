@@ -7,7 +7,7 @@ namespace SupernovaSchool.Telegram.Workflows.MyAppointments;
 
 public class DeleteMyAppointmentsWorkflow : IWorkflow<DeleteMyAppointmentsWorkflowData>
 {
-    public string Id => nameof(DeleteMyAppointmentsWorkflow);
+    public string Id => Commands.DeleteAppointmentCommand;
 
     public int Version => 1;
 

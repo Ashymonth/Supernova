@@ -7,7 +7,7 @@ namespace SupernovaSchool.Telegram.Workflows.CreateTeacher;
 
 public class CreateTeacherWorkflow : IWorkflow<CreateTeacherWorkflowData>
 {
-    public string Id => nameof(CreateTeacherWorkflow);
+    public string Id => Commands.CreateTeacherCommand;
 
     public int Version => 1;
 

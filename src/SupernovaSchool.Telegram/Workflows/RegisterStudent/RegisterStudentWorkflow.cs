@@ -12,7 +12,7 @@ public class RegisterStudentWorkflow : IWorkflow<RegisterStudentWorkflowData>
         ..Enumerable.Range(5, 7).Select(i => i.ToString())
     ];
 
-    public string Id => nameof(RegisterStudentWorkflow);
+    public string Id => Commands.RegisterAsStudentCommand;
 
     public int Version => 1;
 

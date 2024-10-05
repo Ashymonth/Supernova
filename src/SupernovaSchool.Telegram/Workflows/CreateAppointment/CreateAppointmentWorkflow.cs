@@ -8,7 +8,7 @@ namespace SupernovaSchool.Telegram.Workflows.CreateAppointment;
 
 public class CreateAppointmentWorkflow : IWorkflow<CreateAppointmentWorkflowData>
 {
-    public string Id => nameof(CreateAppointmentWorkflow);
+    public string Id => Commands.CreateAppointmentCommand;
 
     public int Version => 1;
 
