@@ -3,7 +3,7 @@ using SupernovaSchool.Models;
 using SupernovaSchool.Telegram.Steps;
 using Telegram.Bot.Types.ReplyMarkups;
 
-namespace SupernovaSchool.Telegram.Workflows.MyAppointments;
+namespace SupernovaSchool.Telegram.Workflows.DeleteAppointments;
 
 public class DeleteMyAppointmentsWorkflowData : IUserStep
 {

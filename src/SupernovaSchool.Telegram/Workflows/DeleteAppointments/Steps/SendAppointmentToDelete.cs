@@ -6,17 +6,21 @@ using Telegram.Bot.Types.ReplyMarkups;
 using WorkflowCore.Interface;
 using WorkflowCore.Models;
 
-namespace SupernovaSchool.Telegram.Workflows.MyAppointments.Steps;
+namespace SupernovaSchool.Telegram.Workflows.DeleteAppointments.Steps;
 
 public class SendAppointmentToDelete : IUserStep, IStepBody
 {
     private readonly ITelegramBotClient _telegramBotClient;
-
-    public SendAppointmentToDelete(ITelegramBotClient telegramBotClient)
+    private readonly IConversationHistory _conversationHistory;
+    
+    public SendAppointmentToDelete(ITelegramBotClient telegramBotClient, IConversationHistory conversationHistory)
     {
         _telegramBotClient = telegramBotClient;
+        _conversationHistory = conversationHistory;
     }
-
+    
+    public string UserId { get; set; } = null!;
+    
     public IReadOnlyCollection<StudentAppointmentInfo> StudentAppointments { get; set; } = [];
 
     public async Task<ExecutionResult> RunAsync(IStepExecutionContext context)
@@ -28,10 +32,12 @@ public class SendAppointmentToDelete : IUserStep, IStepBody
                 var button = InlineKeyboardButton.WithCallbackData("Удалить",
                     studentAppointmentInfo.DueDate.ToString(CultureInfo.GetCultureInfo("ru-RU")));
 
-                await _telegramBotClient.SendTextMessageAsync(UserId,
+                var message = await _telegramBotClient.SendTextMessageAsync(UserId,
                     $"{studentAppointmentInfo.TeacherName} - {studentAppointmentInfo.DueDate}",
                     replyMarkup: new InlineKeyboardMarkup(button),
                     cancellationToken: context.CancellationToken);
+
+                _conversationHistory.AddMessage(UserId, message.MessageId);
             });
 
             await Task.WhenAll(tasks);
@@ -39,6 +45,4 @@ public class SendAppointmentToDelete : IUserStep, IStepBody
 
         return ExecutionResult.Next();
     }
-
-    public string UserId { get; set; } = null!;
 }

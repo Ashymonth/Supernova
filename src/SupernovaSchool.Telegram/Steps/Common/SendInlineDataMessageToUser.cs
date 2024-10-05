@@ -8,12 +8,16 @@ namespace SupernovaSchool.Telegram.Steps.Common;
 public class SendInlineDataMessageToUser : IUserStep, IStepBody
 {
     private readonly ITelegramBotClient _telegramBotClient;
+    private readonly IConversationHistory _conversationHistory;
 
-    public SendInlineDataMessageToUser(ITelegramBotClient telegramBotClient)
+    public SendInlineDataMessageToUser(ITelegramBotClient telegramBotClient, IConversationHistory conversationHistory)
     {
         _telegramBotClient = telegramBotClient;
+        _conversationHistory = conversationHistory;
     }
-
+    
+    public string UserId { get; set; } = null!;
+    
     public string Message { get; set; } = null!;
 
     public InlineKeyboardButton[] Options { get; set; } = [];
@@ -25,8 +29,9 @@ public class SendInlineDataMessageToUser : IUserStep, IStepBody
         var result =
             await _telegramBotClient.SendTextMessageAsync(int.Parse(UserId), Message, replyMarkup: replyMarkup);
 
+        _conversationHistory.AddMessage(UserId, result.MessageId);
+
         return ExecutionResult.Next();
     }
 
-    public string UserId { get; set; } = null!;
 }

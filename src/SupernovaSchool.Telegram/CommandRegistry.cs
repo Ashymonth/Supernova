@@ -1,7 +1,7 @@
 using SupernovaSchool.Telegram.Steps;
 using SupernovaSchool.Telegram.Workflows.CreateAppointment;
 using SupernovaSchool.Telegram.Workflows.CreateTeacher;
-using SupernovaSchool.Telegram.Workflows.MyAppointments;
+using SupernovaSchool.Telegram.Workflows.DeleteAppointments;
 using SupernovaSchool.Telegram.Workflows.RegisterStudent;
 
 namespace SupernovaSchool.Telegram;

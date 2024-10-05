@@ -9,12 +9,16 @@ public class SendMessageWithOptionsToUser : IStepBody, IUserStep
 {
     private const int ItemsPerPage = 5;
     private readonly ITelegramBotClient _telegramBotClient;
+    private readonly IConversationHistory _conversationHistory;
 
-    public SendMessageWithOptionsToUser(ITelegramBotClient telegramBotClient)
+    public SendMessageWithOptionsToUser(ITelegramBotClient telegramBotClient, IConversationHistory conversationHistory)
     {
         _telegramBotClient = telegramBotClient;
+        _conversationHistory = conversationHistory;
     }
-
+    
+    public string UserId { get; set; } = default!;
+    
     public string Message { get; set; } = default!;
 
     public string[] Options { get; set; } = null!;
@@ -39,8 +43,8 @@ public class SendMessageWithOptionsToUser : IStepBody, IUserStep
 
         var message = await _telegramBotClient.SendTextMessageAsync(UserId, Message, replyMarkup: answerOptions);
 
+        _conversationHistory.AddMessage(UserId, message.MessageId);
+        
         return ExecutionResult.Next();
     }
-
-    public string UserId { get; set; } = default!;
 }

@@ -1,9 +1,9 @@
 using SupernovaSchool.Telegram.Extensions;
 using SupernovaSchool.Telegram.Steps;
-using SupernovaSchool.Telegram.Workflows.MyAppointments.Steps;
+using SupernovaSchool.Telegram.Workflows.DeleteAppointments.Steps;
 using WorkflowCore.Interface;
 
-namespace SupernovaSchool.Telegram.Workflows.MyAppointments;
+namespace SupernovaSchool.Telegram.Workflows.DeleteAppointments;
 
 public class DeleteMyAppointmentsWorkflow : IWorkflow<DeleteMyAppointmentsWorkflowData>
 {

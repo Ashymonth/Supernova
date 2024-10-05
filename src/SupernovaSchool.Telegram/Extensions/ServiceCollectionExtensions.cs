@@ -2,7 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SupernovaSchool.Telegram.Steps.Common;
 using SupernovaSchool.Telegram.Workflows.CreateAppointment.Steps;
 using SupernovaSchool.Telegram.Workflows.CreateTeacher.Steps;
-using SupernovaSchool.Telegram.Workflows.MyAppointments.Steps;
+using SupernovaSchool.Telegram.Workflows.DeleteAppointments.Steps;
 using SupernovaSchool.Telegram.Workflows.RegisterStudent.Steps;
 using Telegram.Bot;
 

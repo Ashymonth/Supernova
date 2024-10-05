@@ -11,7 +11,7 @@ using SupernovaSchool.Host;
 using SupernovaSchool.Telegram.Extensions;
 using SupernovaSchool.Telegram.Workflows.CreateAppointment;
 using SupernovaSchool.Telegram.Workflows.CreateTeacher;
-using SupernovaSchool.Telegram.Workflows.MyAppointments;
+using SupernovaSchool.Telegram.Workflows.DeleteAppointments;
 using SupernovaSchool.Telegram.Workflows.RegisterStudent;
 using WorkflowCore.Interface;
 using YandexCalendar.Net.Extensions;

@@ -3,7 +3,7 @@ using SupernovaSchool.Telegram.Steps;
 using WorkflowCore.Interface;
 using WorkflowCore.Models;
 
-namespace SupernovaSchool.Telegram.Workflows.MyAppointments.Steps;
+namespace SupernovaSchool.Telegram.Workflows.DeleteAppointments.Steps;
 
 public class DeleteAppointmentStep : IUserStep, IStepBody
 {
@@ -13,10 +13,11 @@ public class DeleteAppointmentStep : IUserStep, IStepBody
     {
         _appointmentService = appointmentService;
     }
-
+    
+    public string UserId { get; set; } = null!;
+    
     public DateTime AppointmentDay { get; set; }
-
-
+    
     public async Task<ExecutionResult> RunAsync(IStepExecutionContext context)
     {
         await _appointmentService.DeleteStudentAppointmentAsync(AppointmentDay, UserId, context.CancellationToken);
@@ -24,5 +25,4 @@ public class DeleteAppointmentStep : IUserStep, IStepBody
         return ExecutionResult.Next();
     }
 
-    public string UserId { get; set; } = null!;
 }
