@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Caching.Memory;
+using SupernovaSchool.Telegram.Extensions;
 using Telegram.Bot;
 using WorkflowCore.Interface;
 
@@ -9,7 +10,7 @@ public interface IUserSessionStorage
 {
     Task<bool> StartWorkflow(string userId, string workflowName, object workflowData);
 
-    Task TerminateWorkflow(string userId);
+    Task TerminateWorkflow(string userId, CancellationToken ct = default);
 }
 
 public class UserSessionStorage : IUserSessionStorage
@@ -46,22 +47,22 @@ public class UserSessionStorage : IUserSessionStorage
         return true;
     }
 
-    public async Task TerminateWorkflow(string userId)
+    public async Task TerminateWorkflow(string userId, CancellationToken ct = default)
     {
-        var sessionInfo = _memoryCache.Get<string>(userId);
-        if (sessionInfo is null)
+        var cacheKey = string.Format(CacheKeyTemplate, userId);
+        var workflowId = _memoryCache.Get<string>(cacheKey);
+        if (workflowId is null)
         {
             return;
         }
 
-        await _workflowHost.TerminateWorkflow(sessionInfo);
+        if (_workflowHost.PersistenceStore.GetWorkflowInstance(workflowId, ct) is not null)
+        {
+            await _workflowHost.TerminateWorkflow(workflowId);   
+        }
 
-        _conversationHistory.CleanMessages(userId, out var messageIds);
+        await _conversationHistory.DeleteMessagesAsync(userId, _telegramBotClient, ct);
 
-        await Parallel.ForEachAsync(messageIds, new ParallelOptions { MaxDegreeOfParallelism = 3 },
-            async (messageId, token) =>
-            {
-                await _telegramBotClient.DeleteMessageAsync(userId, messageId, cancellationToken: token);
-            });
+        _memoryCache.Remove(cacheKey);
     }
 }

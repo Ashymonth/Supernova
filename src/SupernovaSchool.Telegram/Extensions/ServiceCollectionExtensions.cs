@@ -1,10 +1,14 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using SupernovaSchool.Telegram.Steps;
 using SupernovaSchool.Telegram.Steps.Common;
 using SupernovaSchool.Telegram.Workflows.CreateAppointment.Steps;
 using SupernovaSchool.Telegram.Workflows.CreateTeacher.Steps;
 using SupernovaSchool.Telegram.Workflows.DeleteAppointments.Steps;
 using SupernovaSchool.Telegram.Workflows.RegisterStudent.Steps;
 using Telegram.Bot;
+using WorkflowCore.Interface;
+using WorkflowCore.Models;
 
 namespace SupernovaSchool.Telegram.Extensions;
 
@@ -14,12 +18,14 @@ public static class ServiceCollectionExtensions
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentException.ThrowIfNullOrWhiteSpace(botToken);
+        
         services.AddWorkflow();
 
         services.AddTransient<SendMessageToUser>();
         services.AddTransient<SendMessageWithOptionsToUser>();
         services.AddTransient<SendInitialMessageToUserStep>();
         services.AddTransient<SendInlineDataMessageToUser>();
+        services.AddTransient<CleanupStep>();
 
         services.AddTransient<SendTeacherListStep>();
         services.AddTransient<SendAvailableTimeSlotsStep>();
@@ -33,14 +39,14 @@ public static class ServiceCollectionExtensions
         services.AddTransient<LoadMyAppointmentsStep>();
         services.AddTransient<SendAppointmentToDelete>();
         services.AddTransient<DeleteAppointmentStep>();
-        
+
         services.AddTransient<EnsureThatUserIsAdminStep>();
         services.AddTransient<CreateTeacherStep>();
 
         services.AddSingleton<IConversationHistory, ConversationHistory>();
         services.AddSingleton<IUserSessionStorage, UserSessionStorage>();
         services.AddSingleton<CommandRegistry>();
-        
+
         services.AddSingleton<ITelegramBotClient>(_ => new TelegramBotClient(botToken));
         services.AddHostedService<TelegramHostedService>();
     }

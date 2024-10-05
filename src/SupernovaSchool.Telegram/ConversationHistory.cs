@@ -7,9 +7,9 @@ public interface IConversationHistory
 {
     void AddMessage(string userId, int messageId);
 
-    List<int>? GetMessages(string userId);
+    HashSet<int>? GetMessages(string userId);
 
-    void CleanMessages(string userId, out List<int> messageIds);
+    void CleanMessages(string userId, out HashSet<int> messageIds);
 }
 
 public class ConversationHistory : IConversationHistory
@@ -27,27 +27,27 @@ public class ConversationHistory : IConversationHistory
     {
         var cacheKey = string.Format(CacheKeyTemplate, userId);
 
-        if (_memoryCache.TryGetValue(cacheKey, out List<int>? cachedMessage))
+        if (_memoryCache.TryGetValue(cacheKey, out HashSet<int>? cachedMessage))
         {
             cachedMessage!.Add(messageId);
             return;
         }
 
-        _memoryCache.Set(cacheKey, new List<int> { messageId });
+        _memoryCache.Set(cacheKey, new HashSet<int> { messageId });
     }
 
-    public List<int>? GetMessages(string userId)
+    public HashSet<int>? GetMessages(string userId)
     {
         var cacheKey = string.Format(CacheKeyTemplate, userId);
 
-        return _memoryCache.Get<List<int>>(cacheKey);
+        return _memoryCache.Get<HashSet<int>>(cacheKey);
     }
 
-    public void CleanMessages(string userId, out List<int> messageIds)
+    public void CleanMessages(string userId, out HashSet<int> messageIds)
     {
         var cacheKey = string.Format(CacheKeyTemplate, userId);
 
-        messageIds = _memoryCache.Get<List<int>>(cacheKey) ?? [];
+        messageIds = _memoryCache.Get<HashSet<int>>(cacheKey) ?? [];
         _memoryCache.Remove(userId);
     }
 }

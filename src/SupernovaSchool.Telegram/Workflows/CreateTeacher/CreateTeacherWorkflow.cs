@@ -1,4 +1,5 @@
 using SupernovaSchool.Telegram.Extensions;
+using SupernovaSchool.Telegram.Steps;
 using SupernovaSchool.Telegram.Workflows.CreateTeacher.Steps;
 using WorkflowCore.Interface;
 using WorkflowCore.Models;
@@ -17,7 +18,11 @@ public class CreateTeacherWorkflow : IWorkflow<CreateTeacherWorkflowData>
             .Input(step => step.UserId, data => data.UserId)
             .Output(data => data.IsAdmin, step => step.IsAdmin)
             .If(data => !data.IsAdmin).Do(workflowBuilder =>
-                workflowBuilder.SendMessageToUser("У вас недостаточно прав для этой команды").EndWorkflow())
+                workflowBuilder
+                    .Then<CleanupStep>()
+                    .Input(step => step.UserId, data => data.UserId)
+                    .SendMessageToUser("У вас недостаточно прав для этой команды", false)
+                    .EndWorkflow())
             .SendMessageToUser("Введите Фио")
             .WaitForUserMessage(data => data.TeacherName, message => message.Message)
             .SendMessageToUser("Введите логин от яндекс календаря")
@@ -30,7 +35,9 @@ public class CreateTeacherWorkflow : IWorkflow<CreateTeacherWorkflowData>
             .Input(step => step.Name, data => data.TeacherName)
             .Input(step => step.Login, data => data.YandexCalendarLogin)
             .Input(step => step.Password, data => data.YandexCalendarPassword)
-            .SendMessageToUser("Учитель успешно добавлен")
+            .Then<CleanupStep>()
+            .Input(step => step.UserId, data => data.UserId)
+            .SendMessageToUser("Учитель успешно добавлен", false)
             .OnError(WorkflowErrorHandling.Terminate)
             .EndWorkflow();
     }

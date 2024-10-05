@@ -31,5 +31,4 @@ public class SendInitialMessageToUserStep : IStepBody, IUserStep
         
         return ExecutionResult.Next();
     }
-
 }

@@ -30,7 +30,9 @@ public class DeleteMyAppointmentsWorkflow : IWorkflow<DeleteMyAppointmentsWorkfl
             .Then<DeleteAppointmentStep>()
             .Input(step => step.UserId, data => data.UserId)
             .Input(step => step.AppointmentDay, data => data.AppointmentDateToDelete)
-            .SendMessageToUser("Запись успешно удалена")
+            .Then<CleanupStep>()
+            .Input(step => step.UserId, data => data.UserId)
+            .SendMessageToUser("Запись успешно удалена", false)
             .EndWorkflow();
     }
 }

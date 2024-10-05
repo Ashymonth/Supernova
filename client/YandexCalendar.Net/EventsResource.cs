@@ -134,6 +134,7 @@ public class EventsResource : IEventsResource
 
         var formattedUrl = string.Format(CreateEventUrlTemplate, calendarUrl, eventId);
         using var request = new HttpRequestMessage(HttpMethod.Delete, formattedUrl);
+        request.SetCredentials(credentials);
 
         using var response = await _httpClient.DeleteAsync(formattedUrl, ct);
         response.EnsureSuccessStatusCode();

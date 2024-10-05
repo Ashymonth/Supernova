@@ -17,17 +17,21 @@ public class SendMessageToUser : IStepBody, IUserStep
     }
 
     public string UserId { get; set; } = default!;
-    
+
     public string Message { get; set; } = default!;
+
+    public bool ShouldBeDeleted { get; set; } = true;
 
     public async Task<ExecutionResult> RunAsync(IStepExecutionContext context)
     {
         var message =
             await _telegramBotClient.SendTextMessageAsync(UserId, Message, replyMarkup: new ReplyKeyboardRemove());
 
-        _conversationHistory.AddMessage(UserId, message.MessageId);
-        
+        if (ShouldBeDeleted)
+        {
+            _conversationHistory.AddMessage(UserId, message.MessageId);
+        }
+
         return ExecutionResult.Next();
     }
-
 }
