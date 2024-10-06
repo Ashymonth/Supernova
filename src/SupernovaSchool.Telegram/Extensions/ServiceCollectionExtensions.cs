@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SupernovaSchool.Telegram.Steps;
 using SupernovaSchool.Telegram.Steps.Common;
+using SupernovaSchool.Telegram.Workflows;
 using SupernovaSchool.Telegram.Workflows.CreateAppointment.Steps;
 using SupernovaSchool.Telegram.Workflows.CreateTeacher.Steps;
 using SupernovaSchool.Telegram.Workflows.DeleteAppointments.Steps;
@@ -9,6 +10,7 @@ using SupernovaSchool.Telegram.Workflows.RegisterStudent.Steps;
 using Telegram.Bot;
 using WorkflowCore.Interface;
 using WorkflowCore.Models;
+using WorkflowCore.Models.LifeCycleEvents;
 
 namespace SupernovaSchool.Telegram.Extensions;
 
@@ -20,6 +22,7 @@ public static class ServiceCollectionExtensions
         ArgumentException.ThrowIfNullOrWhiteSpace(botToken);
         
         services.AddWorkflow();
+        services.AddWorkflowMiddleware<DiagnosticMiddleware>();
 
         services.AddTransient<SendMessageToUser>();
         services.AddTransient<SendMessageWithOptionsToUser>();

@@ -1,4 +1,6 @@
+using System.Diagnostics.Metrics;
 using Microsoft.EntityFrameworkCore;
+using OpenTelemetry.Metrics;
 using SupernovaSchool;
 using SupernovaSchool.Abstractions;
 using SupernovaSchool.Abstractions.Repositories;
@@ -9,6 +11,7 @@ using SupernovaSchool.Data;
 using SupernovaSchool.Data.Repositories;
 using SupernovaSchool.Host;
 using SupernovaSchool.Telegram.Extensions;
+using SupernovaSchool.Telegram.Metrics;
 using SupernovaSchool.Telegram.Workflows.CreateAppointment;
 using SupernovaSchool.Telegram.Workflows.CreateTeacher;
 using SupernovaSchool.Telegram.Workflows.DeleteAppointments;
@@ -18,6 +21,10 @@ using YandexCalendar.Net.Extensions;
 using IDateTimeProvider = SupernovaSchool.Abstractions.IDateTimeProvider;
 
 var builder = WebApplication.CreateBuilder();
+
+builder.Services.AddOpenTelemetry()
+    .WithMetrics(providerBuilder =>
+        providerBuilder.AddPrometheusExporter().AddAspNetCoreInstrumentation().AddRuntimeInstrumentation());
 
 builder.Services.AddDbContext<SupernovaSchoolDbContext>(optionsBuilder =>
     optionsBuilder.UseSqlite(builder.Configuration.GetConnectionString("Sqlite")));
@@ -47,7 +54,11 @@ builder.Services.AddTelegramBot(builder.Configuration.GetValue<string>("Token")!
 
 builder.Services.YandexCalendarClient();
 
+builder.Services.AddSingleton<WorkflowStaterCounterMetric>();
+
 var app = builder.Build();
+
+app.MapPrometheusScrapingEndpoint();
 
 var workflow = app.Services.GetRequiredService<IWorkflowHost>();
 
