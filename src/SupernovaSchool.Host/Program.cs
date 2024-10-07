@@ -44,6 +44,7 @@ try
         .WithTracing()
         .WithMetrics(providerBuilder => providerBuilder
             .AddMeter(WorkflowStaterCounterMetric.MeterName)
+            .AddMeter(StepDurationTimeMeter.MeterName)
             .AddPrometheusExporter()
             .AddAspNetCoreInstrumentation()
             .AddRuntimeInstrumentation());
@@ -77,6 +78,7 @@ try
     builder.Services.YandexCalendarClient();
 
     builder.Services.AddSingleton<WorkflowStaterCounterMetric>();
+    builder.Services.AddSingleton<StepDurationTimeMeter>();
 
     var app = builder.Build();
 

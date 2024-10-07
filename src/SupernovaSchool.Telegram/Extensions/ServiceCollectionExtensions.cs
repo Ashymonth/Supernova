@@ -24,6 +24,7 @@ public static class ServiceCollectionExtensions
         
         services.AddWorkflow();
         services.AddWorkflowMiddleware<DiagnosticMiddleware>();
+        services.AddWorkflowStepMiddleware<StepDurationMiddleware>();
 
         services.AddTransient<SendMessageToUser>();
         services.AddTransient<SendMessageWithOptionsToUser>();
