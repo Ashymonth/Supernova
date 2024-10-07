@@ -1,9 +1,10 @@
 using Microsoft.Extensions.Logging;
 using SupernovaSchool.Telegram.Metrics;
+using SupernovaSchool.Telegram.Steps;
 using WorkflowCore.Interface;
 using WorkflowCore.Models;
 
-namespace SupernovaSchool.Telegram.Workflows;
+namespace SupernovaSchool.Telegram.Middlewares;
 
 public class DiagnosticMiddleware : IWorkflowMiddleware
 {
@@ -24,7 +25,8 @@ public class DiagnosticMiddleware : IWorkflowMiddleware
 
         var workflowId = workflow.Id;
 
-        using (_logger.BeginScope("WorkflowId => {@WorkflowId}", workflowId))
+        var userId = workflow.Data is IUserStep userStep ? userStep.UserId : null;
+        using (_logger.BeginScope("WorkflowId => {@WorkflowId}, UserId: {@UserId}", workflowId, userId))
         {
             await next();
         }
