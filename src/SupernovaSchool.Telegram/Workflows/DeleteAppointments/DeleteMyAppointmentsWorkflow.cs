@@ -19,7 +19,10 @@ public class DeleteMyAppointmentsWorkflow : IWorkflow<DeleteMyAppointmentsWorkfl
             .Output(data => data.StudentAppointmentInfo, step => step.StudentAppointments)
             .If(data => data.StudentAppointmentInfo.Count == 0)
             .Do(workflowBuilder =>
-                workflowBuilder.SendMessageToUser("У вас нет ни одной активной записи").EndWorkflow())
+                workflowBuilder.SendMessageToUser("У вас нет ни одной активной записи", false)
+                    .Then<CleanupStep>()
+                    .Input(step => step.UserId, data => data.UserId)
+                    .EndWorkflow())
             .SendMessageToUser("Выберите запись для удаления")
             .Then<SendAppointmentToDelete>()
             .Input(delete => delete.UserId, data => data.UserId)
@@ -33,6 +36,8 @@ public class DeleteMyAppointmentsWorkflow : IWorkflow<DeleteMyAppointmentsWorkfl
             .Then<CleanupStep>()
             .Input(step => step.UserId, data => data.UserId)
             .SendMessageToUser("Запись успешно удалена", false)
+            .Then<CleanupStep>()
+            .Input(step => step.UserId, data => data.UserId)
             .EndWorkflow();
     }
 }

@@ -8,14 +8,15 @@ namespace SupernovaSchool.Telegram.Extensions;
 
 public static class StepBuilderMessageExtensions
 {
-    public static IStepBuilder<TData, SendMessageToUser> SendMessageToUser<TData>(
-        this IWorkflowBuilder<TData> builder, string message)
+    public static IStepBuilder<TData, SendMessageToUser> SendMessageToUser<TData>(this IWorkflowBuilder<TData> builder,
+        string message, bool b)
         where TData : IUserStep
     {
         return builder
             .StartWith<SendMessageToUser>()
             .Input(step => step.UserId, data => data.UserId)
-            .Input(step => step.Message, _ => message);
+            .Input(step => step.Message, _ => message)
+            .Input(step => step.ShouldBeDeleted, _ => b);
     }
 
     public static IStepBuilder<TData, SendInitialMessageToUserStep> SendInitialMessageToUser<TData>(

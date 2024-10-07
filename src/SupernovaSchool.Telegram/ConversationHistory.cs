@@ -7,8 +7,6 @@ public interface IConversationHistory
 {
     void AddMessage(string userId, int messageId);
 
-    HashSet<int>? GetMessages(string userId);
-
     void CleanMessages(string userId, out HashSet<int> messageIds);
 }
 
@@ -34,13 +32,6 @@ public class ConversationHistory : IConversationHistory
         }
 
         _memoryCache.Set(cacheKey, new HashSet<int> { messageId });
-    }
-
-    public HashSet<int>? GetMessages(string userId)
-    {
-        var cacheKey = string.Format(CacheKeyTemplate, userId);
-
-        return _memoryCache.Get<HashSet<int>>(cacheKey);
     }
 
     public void CleanMessages(string userId, out HashSet<int> messageIds)
