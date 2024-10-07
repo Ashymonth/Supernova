@@ -17,4 +17,10 @@
     <ProjectReference Include="..\..\SupernovaSchool.Host\SupernovaSchool.Host.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Configs\prometheus.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

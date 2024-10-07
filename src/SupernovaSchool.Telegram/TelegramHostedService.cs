@@ -38,22 +38,22 @@ public class TelegramHostedService : IHostedService
             new BotCommand { Command = Commands.RegisterAsStudentCommand, Description = "Зарегистрироваться" }
         ], cancellationToken: cancellationToken);
 
-        await _telegramBotClient.ReceiveAsync(async (client, update, arg3) =>
+        _telegramBotClient.StartReceiving(async (client, update, token) =>
             {
                 var message = update.Message?.Text ?? update.CallbackQuery?.Data!;
                 var messageId = update.Message?.MessageId ?? update.CallbackQuery?.Message?.MessageId!;
                 var userId = update.Message?.From?.Id.ToString() ?? update.CallbackQuery?.From.Id.ToString()!;
 
                 await _telegramBotClient.SendChatActionAsync(long.Parse(userId!), ChatAction.Typing,
-                    cancellationToken: cancellationToken);
+                    cancellationToken: token);
 
                 _conversationHistory.AddMessage(userId, messageId.Value);
 
                 if (string.Equals(ExistCommandName, message, StringComparison.InvariantCultureIgnoreCase))
                 {
-                    await _userSessionStorage.TerminateWorkflow(userId);
+                    await _userSessionStorage.TerminateWorkflow(userId, token);
                     await _telegramBotClient.SendTextMessageAsync(userId, "Команда отменена",
-                        cancellationToken: cancellationToken);
+                        cancellationToken: token);
                     return;
                 }
 
@@ -63,7 +63,7 @@ public class TelegramHostedService : IHostedService
                     {
                         await _telegramBotClient.SendTextMessageAsync(userId,
                             "Нельзя вызвать новую команду, пока вы не завершили старую",
-                            cancellationToken: cancellationToken);
+                            cancellationToken: token);
                     }
 
                     return;

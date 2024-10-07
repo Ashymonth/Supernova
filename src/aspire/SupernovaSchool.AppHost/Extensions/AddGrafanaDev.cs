@@ -13,6 +13,7 @@ public static class AddGrafanaDev
             .WithHttpEndpoint(
                 targetPort: 3000,
                 port: 3000,
-                name: "grafana");
+                name: "grafana")
+            .WithBindMount("grafana-storage", "/var/lib/grafana");
     }
 }

@@ -18,15 +18,15 @@ public class DiagnosticMiddleware : IWorkflowMiddleware
 
     public WorkflowMiddlewarePhase Phase => WorkflowMiddlewarePhase.PreWorkflow;
 
-    public Task HandleAsync(WorkflowInstance workflow, WorkflowDelegate next)
+    public async Task HandleAsync(WorkflowInstance workflow, WorkflowDelegate next)
     {
-        _counterMetric.WorkflowStarted(workflow.Id);
+        _counterMetric.WorkflowStarted(workflow.WorkflowDefinitionId);
 
         var workflowId = workflow.Id;
 
         using (_logger.BeginScope("WorkflowId => {@WorkflowId}", workflowId))
         {
-            return next();
+            await next();
         }
     }
 }

@@ -1,6 +1,7 @@
-using System.Diagnostics.Metrics;
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry.Metrics;
+using Serilog;
 using SupernovaSchool;
 using SupernovaSchool.Abstractions;
 using SupernovaSchool.Abstractions.Repositories;
@@ -20,56 +21,100 @@ using WorkflowCore.Interface;
 using YandexCalendar.Net.Extensions;
 using IDateTimeProvider = SupernovaSchool.Abstractions.IDateTimeProvider;
 
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Verbose()
+    .WriteTo.Console(formatProvider: CultureInfo.InvariantCulture)
+    .WriteTo.File("logs/bootstrap.log", formatProvider: CultureInfo.InvariantCulture)
+    .CreateBootstrapLogger();
+
+Log.Information("Starting web host");
+
 var builder = WebApplication.CreateBuilder();
 
-builder.AddServiceDefaults();
+try
+{
+    Serilog.Debugging.SelfLog.Enable(Console.WriteLine);
+    builder.Services.AddControllers();
 
-builder.Services.AddOpenTelemetry()
-    .WithMetrics(providerBuilder =>
-        providerBuilder.AddPrometheusExporter().AddAspNetCoreInstrumentation().AddRuntimeInstrumentation());
+    builder.Host.UseSerilog((_, configuration) => configuration.ReadFrom.Configuration(builder.Configuration));
 
-builder.Services.AddDbContext<SupernovaSchoolDbContext>(optionsBuilder =>
-    optionsBuilder.UseSqlite(builder.Configuration.GetConnectionString("Sqlite")));
+    builder.AddServiceDefaults();
 
-builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+    builder.Services.AddOpenTelemetry()
+        .WithTracing()
+        .WithMetrics(providerBuilder => providerBuilder
+            .AddMeter(WorkflowStaterCounterMetric.MeterName)
+            .AddPrometheusExporter()
+            .AddAspNetCoreInstrumentation()
+            .AddRuntimeInstrumentation());
 
-builder.Services.AddSingleton<IPasswordProtector, PasswordProtector>();
-builder.Services.AddSingleton<ISecurityKeyProvider>(_ =>
-    new SecurityKeyProvider(builder.Configuration.GetValue<string>("SecurityConfig:SecretKey")!,
-        builder.Configuration.GetValue<string>("SecurityConfig:InitVector")!));
+    builder.Services.AddDbContext<SupernovaSchoolDbContext>(optionsBuilder =>
+        optionsBuilder.UseSqlite(builder.Configuration.GetConnectionString("Sqlite")));
 
-builder.Services.AddSingleton<IAdminsProvider>(_ => new TelegramAdminsProvider(
-    builder.Configuration.GetSection("AdminUserIdsFromTelegram").Get<HashSet<string>>() ??
-    throw new InvalidOperationException("Admin user ids are not provided")));
+    builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
+    builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-builder.Services.AddSingleton<IDateTimeProvider, DefaultDateTimeProvider>();
-builder.Services.AddTransient<IAppointmentService, AppointmentService>();
-builder.Services.AddTransient<ITeacherService, TeacherService>();
-builder.Services.AddTransient<IStudentService, StudentService>();
-builder.Services.AddTransient<IEventService, EventService>();
-builder.Services.AddTransient<ICalendarService, CalendarService>();
+    builder.Services.AddSingleton<IPasswordProtector, PasswordProtector>();
+    builder.Services.AddSingleton<ISecurityKeyProvider>(_ =>
+        new SecurityKeyProvider(builder.Configuration.GetValue<string>("SecurityConfig:SecretKey")!,
+            builder.Configuration.GetValue<string>("SecurityConfig:InitVector")!));
 
-builder.Services.AddMemoryCache();
+    builder.Services.AddSingleton<IAdminsProvider>(_ => new TelegramAdminsProvider(
+        builder.Configuration.GetSection("AdminUserIdsFromTelegram").Get<HashSet<string>>() ??
+        throw new InvalidOperationException("Admin user ids are not provided")));
 
-builder.Services.AddTelegramBot(builder.Configuration.GetValue<string>("Token")!);
+    builder.Services.AddSingleton<IDateTimeProvider, DefaultDateTimeProvider>();
+    builder.Services.AddTransient<IAppointmentService, AppointmentService>();
+    builder.Services.AddTransient<ITeacherService, TeacherService>();
+    builder.Services.AddTransient<IStudentService, StudentService>();
+    builder.Services.AddTransient<IEventService, EventService>();
+    builder.Services.AddTransient<ICalendarService, CalendarService>();
 
-builder.Services.YandexCalendarClient();
+    builder.Services.AddMemoryCache();
 
-builder.Services.AddSingleton<WorkflowStaterCounterMetric>();
+    builder.Services.AddTelegramBot(builder.Configuration.GetValue<string>("Token")!);
 
-var app = builder.Build();
+    builder.Services.YandexCalendarClient();
 
-app.MapDefaultEndpoints();
+    builder.Services.AddSingleton<WorkflowStaterCounterMetric>();
 
-app.MapPrometheusScrapingEndpoint();
+    var app = builder.Build();
 
-var workflow = app.Services.GetRequiredService<IWorkflowHost>();
+    if (builder.Environment.IsDevelopment())
+    {
+        app.UseDeveloperExceptionPage();
+    }
 
-workflow.RegisterWorkflow<CreateAppointmentWorkflow, CreateAppointmentWorkflowData>();
-workflow.RegisterWorkflow<RegisterStudentWorkflow, RegisterStudentWorkflowData>();
-workflow.RegisterWorkflow<DeleteMyAppointmentsWorkflow, DeleteMyAppointmentsWorkflowData>();
-workflow.RegisterWorkflow<CreateTeacherWorkflow, CreateTeacherWorkflowData>();
-workflow.Start();
+    app.UseHttpsRedirection();
 
-app.Run();
+    app.MapControllers();
+
+    app.UseOpenTelemetryPrometheusScrapingEndpoint("metrics");
+
+    app.MapDefaultEndpoints();
+
+    using (var scope = app.Services.CreateScope())
+    {
+        var workflow = scope.ServiceProvider.GetRequiredService<IWorkflowHost>();
+
+        workflow.RegisterWorkflow<CreateAppointmentWorkflow, CreateAppointmentWorkflowData>();
+        workflow.RegisterWorkflow<RegisterStudentWorkflow, RegisterStudentWorkflowData>();
+        workflow.RegisterWorkflow<DeleteMyAppointmentsWorkflow, DeleteMyAppointmentsWorkflowData>();
+        workflow.RegisterWorkflow<CreateTeacherWorkflow, CreateTeacherWorkflowData>();
+        workflow.Start();
+    }
+
+    app.Run();
+
+    return 0;
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Host terminated unexpectedly");
+    return 1;
+}
+finally
+{
+    Log.Information("Shut down complete");
+    Log.CloseAndFlush();
+}

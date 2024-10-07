@@ -4,11 +4,13 @@ namespace SupernovaSchool.Telegram.Metrics;
 
 public class WorkflowStaterCounterMetric
 {
+    public const string MeterName = "supernova.workflow";
+    
     private readonly Counter<int> _counter;
 
     public WorkflowStaterCounterMetric(IMeterFactory meterFactory)
     {
-        var meter = meterFactory.Create("SupernovaSchool.Telegram");
+        var meter = meterFactory.Create("supernova.workflow");
         _counter = meter.CreateCounter<int>("supernova.workflow.started");
     }
 
