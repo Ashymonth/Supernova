@@ -22,6 +22,8 @@ using IDateTimeProvider = SupernovaSchool.Abstractions.IDateTimeProvider;
 
 var builder = WebApplication.CreateBuilder();
 
+builder.AddServiceDefaults();
+
 builder.Services.AddOpenTelemetry()
     .WithMetrics(providerBuilder =>
         providerBuilder.AddPrometheusExporter().AddAspNetCoreInstrumentation().AddRuntimeInstrumentation());
@@ -57,6 +59,8 @@ builder.Services.YandexCalendarClient();
 builder.Services.AddSingleton<WorkflowStaterCounterMetric>();
 
 var app = builder.Build();
+
+app.MapDefaultEndpoints();
 
 app.MapPrometheusScrapingEndpoint();
 
