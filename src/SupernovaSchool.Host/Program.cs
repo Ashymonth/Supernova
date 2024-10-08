@@ -12,14 +12,17 @@ using SupernovaSchool.Application.Services;
 using SupernovaSchool.Data;
 using SupernovaSchool.Data.Repositories;
 using SupernovaSchool.Host;
+using SupernovaSchool.Telegram;
 using SupernovaSchool.Telegram.Extensions;
 using SupernovaSchool.Telegram.Metrics;
+using SupernovaSchool.Telegram.Steps;
 using SupernovaSchool.Telegram.Workflows.CreateAppointment;
 using SupernovaSchool.Telegram.Workflows.CreateTeacher;
 using SupernovaSchool.Telegram.Workflows.DeleteAppointments;
 using SupernovaSchool.Telegram.Workflows.RegisterStudent;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using WorkflowCore.Interface;
 using YandexCalendar.Net.Extensions;
 using IDateTimeProvider = SupernovaSchool.Abstractions.IDateTimeProvider;
@@ -39,6 +42,7 @@ try
     Serilog.Debugging.SelfLog.Enable(Console.WriteLine);
     builder.Services.AddControllers();
 
+    builder.Services.ConfigureTelegramBot<Microsoft.AspNetCore.Http.Json.JsonOptions>(opt => opt.SerializerOptions);
     builder.Host.UseSerilog((_, configuration) => configuration.ReadFrom.Configuration(builder.Configuration));
 
     builder.AddServiceDefaults();
@@ -73,6 +77,7 @@ try
     builder.Services.AddTransient<IStudentService, StudentService>();
     builder.Services.AddTransient<IEventService, EventService>();
     builder.Services.AddTransient<ICalendarService, CalendarService>();
+    builder.Services.AddTransient<UpdateHandler>();
 
     builder.Services.AddMemoryCache();
 
@@ -98,15 +103,17 @@ try
 
     app.MapDefaultEndpoints();
 
-    app.MapPost("updates", async (Update context, CancellationToken ct) =>
+    app.MapPost("updates", async (UpdateHandler handler, Update update, CancellationToken ct) =>
     {
-        return Results.Ok("test");
+        await handler.HandleUpdateAsync(update, ct);
+        return Results.Ok();
     });
 
     var botUrl = builder.Configuration.GetValue<string>("Bot:Url");
     var bot = app.Services.GetRequiredService<ITelegramBotClient>();
     await bot.SetWebhookAsync(string.Empty);
-    await bot.SetWebhookAsync(botUrl! + "/updates", dropPendingUpdates: true);
+    await bot.SetWebhookAsync(botUrl! + "/updates",
+        allowedUpdates: [UpdateType.Message, UpdateType.CallbackQuery], dropPendingUpdates: true);
 
     var workflow = app.Services.GetRequiredService<IWorkflowHost>();
 

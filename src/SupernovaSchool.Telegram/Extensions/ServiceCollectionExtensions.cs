@@ -53,6 +53,5 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<CommandRegistry>();
 
         services.AddSingleton<ITelegramBotClient>(_ => new TelegramBotClient(botToken));
-        services.AddHostedService<TelegramHostedService>();
     }
 }
