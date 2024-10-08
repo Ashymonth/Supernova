@@ -1,0 +1,19 @@
+﻿<Solution>
+  <Folder Name="/aspire/">
+    <Project Path="src\aspire\SupernovaSchool.AppHost\SupernovaSchool.AppHost.csproj" Type="Classic C#" />
+    <Project Path="src\aspire\SupernovaSchool.ServiceDefaults\SupernovaSchool.ServiceDefaults.csproj" />
+  </Folder>
+  <Folder Name="/client/">
+    <Project Path="client\YandexCalendar.Net\YandexCalendar.Net.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src\SupernovaSchool.Application\SupernovaSchool.Application.csproj" />
+    <Project Path="src\SupernovaSchool.Data\SupernovaSchool.Data.csproj" />
+    <Project Path="src\SupernovaSchool.Host\SupernovaSchool.Host.csproj" />
+    <Project Path="src\SupernovaSchool.Telegram\SupernovaSchool.Telegram.csproj" />
+    <Project Path="src\SupernovaSchool\SupernovaSchool.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests\SupernovaSchool.Tests\SupernovaSchool.Tests.csproj" />
+  </Folder>
+</Solution>
