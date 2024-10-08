@@ -71,7 +71,7 @@ public class TelegramHostedService : IHostedService
 
                 await _workflowHost.PublishUserMessageAsync(update.Type, userId,
                     new UserMessage(message, messageId.Value));
-            }, (_, _, _) => Task.CompletedTask, new ReceiverOptions { ThrowPendingUpdates = true },
+            }, (_, _, _) => Task.CompletedTask, new ReceiverOptions { DropPendingUpdates = true },
             cancellationToken);
     }
 
