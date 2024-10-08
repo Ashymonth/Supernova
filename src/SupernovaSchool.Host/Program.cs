@@ -1,4 +1,5 @@
 using System.Globalization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry.Metrics;
 using Serilog;
@@ -17,6 +18,8 @@ using SupernovaSchool.Telegram.Workflows.CreateAppointment;
 using SupernovaSchool.Telegram.Workflows.CreateTeacher;
 using SupernovaSchool.Telegram.Workflows.DeleteAppointments;
 using SupernovaSchool.Telegram.Workflows.RegisterStudent;
+using Telegram.Bot;
+using Telegram.Bot.Types;
 using WorkflowCore.Interface;
 using YandexCalendar.Net.Extensions;
 using IDateTimeProvider = SupernovaSchool.Abstractions.IDateTimeProvider;
@@ -73,7 +76,7 @@ try
 
     builder.Services.AddMemoryCache();
 
-    builder.Services.AddTelegramBot(builder.Configuration.GetValue<string>("Token")!);
+    builder.Services.AddTelegramBot(builder.Configuration.GetValue<string>("Bot:Token")!);
 
     builder.Services.YandexCalendarClient();
 
@@ -95,16 +98,23 @@ try
 
     app.MapDefaultEndpoints();
 
-    using (var scope = app.Services.CreateScope())
+    app.MapPost("updates", async (Update context, CancellationToken ct) =>
     {
-        var workflow = scope.ServiceProvider.GetRequiredService<IWorkflowHost>();
+        return Results.Ok("test");
+    });
 
-        workflow.RegisterWorkflow<CreateAppointmentWorkflow, CreateAppointmentWorkflowData>();
-        workflow.RegisterWorkflow<RegisterStudentWorkflow, RegisterStudentWorkflowData>();
-        workflow.RegisterWorkflow<DeleteMyAppointmentsWorkflow, DeleteMyAppointmentsWorkflowData>();
-        workflow.RegisterWorkflow<CreateTeacherWorkflow, CreateTeacherWorkflowData>();
-        workflow.Start();
-    }
+    var botUrl = builder.Configuration.GetValue<string>("Bot:Url");
+    var bot = app.Services.GetRequiredService<ITelegramBotClient>();
+    await bot.SetWebhookAsync(string.Empty);
+    await bot.SetWebhookAsync(botUrl! + "/updates", dropPendingUpdates: true);
+
+    var workflow = app.Services.GetRequiredService<IWorkflowHost>();
+
+    workflow.RegisterWorkflow<CreateAppointmentWorkflow, CreateAppointmentWorkflowData>();
+    workflow.RegisterWorkflow<RegisterStudentWorkflow, RegisterStudentWorkflowData>();
+    workflow.RegisterWorkflow<DeleteMyAppointmentsWorkflow, DeleteMyAppointmentsWorkflowData>();
+    workflow.RegisterWorkflow<CreateTeacherWorkflow, CreateTeacherWorkflowData>();
+    workflow.Start();
 
     app.Run();
 
