@@ -10,22 +10,25 @@ namespace SupernovaSchool.Telegram;
 public class UpdateHandler
 {
     private const string ExistCommandName = "Выйти";
+    private const string StartCommandName = "/start";
 
     private readonly ITelegramBotClient _telegramBotClient;
     private readonly IWorkflowHost _workflowHost;
     private readonly CommandRegistry _commandRegistry;
     private readonly IUserSessionStorage _userSessionStorage;
     private readonly IConversationHistory _conversationHistory;
+    private readonly ICommandUploader _commandUploader;
 
     public UpdateHandler(ITelegramBotClient telegramBotClient, IWorkflowHost workflowHost,
         CommandRegistry commandRegistry, IUserSessionStorage userSessionStorage,
-        IConversationHistory conversationHistory)
+        IConversationHistory conversationHistory, ICommandUploader commandUploader)
     {
         _telegramBotClient = telegramBotClient;
         _workflowHost = workflowHost;
         _commandRegistry = commandRegistry;
         _userSessionStorage = userSessionStorage;
         _conversationHistory = conversationHistory;
+        _commandUploader = commandUploader;
     }
 
     public async Task HandleUpdateAsync(Update update, CancellationToken token = default)
@@ -36,7 +39,23 @@ public class UpdateHandler
 
         await _telegramBotClient.SendChatActionAsync(long.Parse(userId), ChatAction.Typing,
             cancellationToken: token);
-
+        
+        if (string.Equals(StartCommandName, message, StringComparison.InvariantCultureIgnoreCase))
+        {
+            await _telegramBotClient.SendTextMessageAsync(userId, $"""
+                                                                   Привет! Я бот, с помощью которого можно удобно записаться к психологу.
+                                                                   Первым делом тебе нужно зарегистрироваться, чтобы психолог мог видеть, кто к нему записался.
+                                                                   Сделать это можно с помощью команды: {Commands.RegisterAsStudentCommand}.
+                                                                   После регистрации ты сможешь записаться с помощью команды: {Commands.CreateAppointmentCommand}.
+                                                                   Важно: На 1 день доступна только 1 запись. 
+                                                                   Если ты передумал или захотел перенести запись, то с помощью команды: {Commands.DeleteAppointmentCommand} ты сможешь отменить свою запись.
+                                                                   Любую команду можно преравть, если ты напишешь 'Выйти'
+                                                                   """,
+                cancellationToken: token);
+            await _commandUploader.UploadUserCommandsAsync(userId, token);
+            return;
+        }
+        
         _conversationHistory.AddMessage(userId, messageId.Value);
 
         if (string.Equals(ExistCommandName, message, StringComparison.InvariantCultureIgnoreCase))
