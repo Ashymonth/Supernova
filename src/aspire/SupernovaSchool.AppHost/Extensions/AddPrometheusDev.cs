@@ -2,13 +2,13 @@ namespace SupernovaSchool.AppHost.Extensions;
 
 public static class AddPrometheusDev
 {
-    public static IResourceBuilder<GrafanaDevResource> AddPrometheus(
+    public static void AddPrometheus(
         this IDistributedApplicationBuilder builder,
         string name)
     {
-        var resource = new GrafanaDevResource(name);
+        var resource = new HttpResource(name);
 
-        return builder.AddResource(resource)
+        builder.AddResource(resource)
             .WithImage("prom/prometheus")
             .WithHttpEndpoint(
                 targetPort: 9090,

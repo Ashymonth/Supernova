@@ -2,13 +2,13 @@ namespace SupernovaSchool.AppHost.Extensions;
 
 public static class AddGrafanaDev
 {
-    public static IResourceBuilder<GrafanaDevResource> AddGrafana(
+    public static void AddGrafana(
         this IDistributedApplicationBuilder builder,
         string name)
     {
-        var resource  = new GrafanaDevResource(name);
+        var resource = new HttpResource(name);
 
-        return builder.AddResource(resource)
+        builder.AddResource(resource)
             .WithImage("grafana/grafana-enterprise")
             .WithHttpEndpoint(
                 targetPort: 3000,
