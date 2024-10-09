@@ -1,4 +1,5 @@
 using System.Globalization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry.Metrics;
 using Serilog;
@@ -11,12 +12,17 @@ using SupernovaSchool.Application.Services;
 using SupernovaSchool.Data;
 using SupernovaSchool.Data.Repositories;
 using SupernovaSchool.Host;
+using SupernovaSchool.Telegram;
 using SupernovaSchool.Telegram.Extensions;
 using SupernovaSchool.Telegram.Metrics;
+using SupernovaSchool.Telegram.Steps;
 using SupernovaSchool.Telegram.Workflows.CreateAppointment;
 using SupernovaSchool.Telegram.Workflows.CreateTeacher;
 using SupernovaSchool.Telegram.Workflows.DeleteAppointments;
 using SupernovaSchool.Telegram.Workflows.RegisterStudent;
+using Telegram.Bot;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using WorkflowCore.Interface;
 using YandexCalendar.Net.Extensions;
 using IDateTimeProvider = SupernovaSchool.Abstractions.IDateTimeProvider;
@@ -36,6 +42,7 @@ try
     Serilog.Debugging.SelfLog.Enable(Console.WriteLine);
     builder.Services.AddControllers();
 
+    builder.Services.ConfigureTelegramBot<Microsoft.AspNetCore.Http.Json.JsonOptions>(opt => opt.SerializerOptions);
     builder.Host.UseSerilog((_, configuration) => configuration.ReadFrom.Configuration(builder.Configuration));
 
     builder.AddServiceDefaults();
@@ -70,10 +77,11 @@ try
     builder.Services.AddTransient<IStudentService, StudentService>();
     builder.Services.AddTransient<IEventService, EventService>();
     builder.Services.AddTransient<ICalendarService, CalendarService>();
+    builder.Services.AddTransient<UpdateHandler>();
 
     builder.Services.AddMemoryCache();
 
-    builder.Services.AddTelegramBot(builder.Configuration.GetValue<string>("Token")!);
+    builder.Services.AddTelegramBot(builder.Configuration.GetValue<string>("Bot:Token")!);
 
     builder.Services.YandexCalendarClient();
 
@@ -95,16 +103,25 @@ try
 
     app.MapDefaultEndpoints();
 
-    using (var scope = app.Services.CreateScope())
+    app.MapPost("updates", async (UpdateHandler handler, Update update, CancellationToken ct) =>
     {
-        var workflow = scope.ServiceProvider.GetRequiredService<IWorkflowHost>();
+        await handler.HandleUpdateAsync(update, ct);
+        return Results.Ok();
+    });
 
-        workflow.RegisterWorkflow<CreateAppointmentWorkflow, CreateAppointmentWorkflowData>();
-        workflow.RegisterWorkflow<RegisterStudentWorkflow, RegisterStudentWorkflowData>();
-        workflow.RegisterWorkflow<DeleteMyAppointmentsWorkflow, DeleteMyAppointmentsWorkflowData>();
-        workflow.RegisterWorkflow<CreateTeacherWorkflow, CreateTeacherWorkflowData>();
-        workflow.Start();
-    }
+    var botUrl = builder.Configuration.GetValue<string>("Bot:Url");
+    var bot = app.Services.GetRequiredService<ITelegramBotClient>();
+    await bot.SetWebhookAsync(string.Empty);
+    await bot.SetWebhookAsync(botUrl! + "/updates",
+        allowedUpdates: [UpdateType.Message, UpdateType.CallbackQuery], dropPendingUpdates: true);
+
+    var workflow = app.Services.GetRequiredService<IWorkflowHost>();
+
+    workflow.RegisterWorkflow<CreateAppointmentWorkflow, CreateAppointmentWorkflowData>();
+    workflow.RegisterWorkflow<RegisterStudentWorkflow, RegisterStudentWorkflowData>();
+    workflow.RegisterWorkflow<DeleteMyAppointmentsWorkflow, DeleteMyAppointmentsWorkflowData>();
+    workflow.RegisterWorkflow<CreateTeacherWorkflow, CreateTeacherWorkflowData>();
+    workflow.Start();
 
     app.Run();
 
