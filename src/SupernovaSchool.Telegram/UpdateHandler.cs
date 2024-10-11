@@ -40,7 +40,7 @@ public class UpdateHandler
         await _telegramBotClient.SendChatActionAsync(long.Parse(userId), ChatAction.Typing,
             cancellationToken: token);
 
-        if (string.Equals(StartCommandName, message, StringComparison.InvariantCultureIgnoreCase))
+        if (string.Equals(Commands.StartCommand, message, StringComparison.InvariantCultureIgnoreCase))
         {
             await _commandUploader.UploadUserCommandsAsync(userId, token);
             return await _telegramBotClient.SendTextMessageAsync(userId, CommandText.StartCommandMessage,
@@ -49,7 +49,7 @@ public class UpdateHandler
 
         _conversationHistory.AddMessage(userId, messageId.Value);
 
-        if (string.Equals(Commands.StartCommand, message, StringComparison.InvariantCultureIgnoreCase))
+        if (string.Equals("выйти", message, StringComparison.InvariantCultureIgnoreCase))
         {
             await _userSessionStorage.TerminateWorkflow(userId, token);
             return await _telegramBotClient.SendTextMessageAsync(userId, CommandText.CommandCanceled,
