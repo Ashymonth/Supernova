@@ -19,7 +19,7 @@ public class RegisterStudentWorkflow : IWorkflow<RegisterStudentWorkflowData>
 
     public void Build(IWorkflowBuilder<RegisterStudentWorkflowData> builder)
     {
-        builder.SendInitialMessageToUser("Для того, чтобы записаться к психологу, вам нужно указать свои данные.")
+        builder.SendMessageToUser("Для того, чтобы записаться к психологу, вам нужно указать свои данные.", true)
             .SendMessageToUser("Введите имя")
             .WaitForUserMessage(data => data.StudentName, message => message.Message)
             .SendMessageWithPagination(data => !AvailableClasses.Contains(data.PaginationMessage), workflowBuilder =>

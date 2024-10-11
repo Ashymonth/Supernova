@@ -1,5 +1,4 @@
 using System.Globalization;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry.Metrics;
 using Serilog;
@@ -15,7 +14,6 @@ using SupernovaSchool.Host;
 using SupernovaSchool.Telegram;
 using SupernovaSchool.Telegram.Extensions;
 using SupernovaSchool.Telegram.Metrics;
-using SupernovaSchool.Telegram.Steps;
 using SupernovaSchool.Telegram.Workflows.CreateAppointment;
 using SupernovaSchool.Telegram.Workflows.CreateTeacher;
 using SupernovaSchool.Telegram.Workflows.DeleteAppointments;
@@ -105,11 +103,10 @@ try
 
     app.MapPost("updates", async (UpdateHandler handler, Update update, CancellationToken ct) =>
     {
-        await handler.HandleUpdateAsync(update, ct);
-        return Results.Ok();
+        return Results.Ok( await handler.HandleUpdateAsync(update, ct));
     });
 
-    var botUrl = builder.Configuration.GetValue<string>("Bot:Url");
+    var botUrl = builder.Configuration.GetValue<string>("Bot:WebHookUrl");
     var bot = app.Services.GetRequiredService<ITelegramBotClient>();
     await bot.SetWebhookAsync(string.Empty);
     await bot.SetWebhookAsync(botUrl! + "/updates",
@@ -136,4 +133,8 @@ finally
 {
     Log.Information("Shut down complete");
     Log.CloseAndFlush();
+}
+
+public  partial class Program
+{
 }

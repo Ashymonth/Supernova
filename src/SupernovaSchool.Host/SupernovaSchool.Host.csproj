@@ -38,5 +38,5 @@
         <ProjectReference Include="..\SupernovaSchool.Data\SupernovaSchool.Data.csproj" />
         <ProjectReference Include="..\SupernovaSchool.Telegram\SupernovaSchool.Telegram.csproj" />
     </ItemGroup>
-
+    
 </Project>
