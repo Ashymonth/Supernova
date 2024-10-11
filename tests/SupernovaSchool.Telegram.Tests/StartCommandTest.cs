@@ -1,5 +1,7 @@
 using System.Net.Http.Json;
+using Microsoft.Extensions.DependencyInjection;
 using SupernovaSchool.Telegram.Tests.Fixtures;
+using Telegram.Bot;
 using Telegram.Bot.Types;
 
 namespace SupernovaSchool.Telegram.Tests;
@@ -14,7 +16,7 @@ public class StartCommandTest : BaseCommandTest, IClassFixture<WebAppFactory>
     }
 
     [Fact]
-    public async Task Test()
+    public async Task StartCommandTest_ShouldSendStartMessageAndUploadAllCommands()
     {
         var client = _fixture.CreateClient();
 
@@ -34,5 +36,11 @@ public class StartCommandTest : BaseCommandTest, IClassFixture<WebAppFactory>
 
         Assert.NotNull(message);
         Assert.Equal(CommandText.StartCommandMessage.Replace("\r\n", "\n"), message.Text);
+        
+        var tgClient = _fixture.Services.GetRequiredService<ITelegramBotClient>();
+
+        var commands = await tgClient.GetMyCommandsAsync();
+
+        Assert.Equal(3, commands.Length);
     }
 }
