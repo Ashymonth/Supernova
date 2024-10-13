@@ -7,6 +7,7 @@
 
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
+        <UserSecretsId>e4ee16e2-03ba-4292-9a9d-1043d5f36cda</UserSecretsId>
     </PropertyGroup>
 
     <ItemGroup>
@@ -34,10 +35,10 @@
       <None Update="WTelegram.session">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="telegram-client-configuration.json">
+      <None Update="appsettings.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="appsettings.json">
+      <None Update="appsettings-without-admins.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>

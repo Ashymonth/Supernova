@@ -4,7 +4,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace SupernovaSchool.Telegram.Tests.Fixtures;
 
-public class WebAppFactory : WebApplicationFactory<Program>
+public class WebAppFactoryWhenUserIsNotAdmin : WebApplicationFactory<Program>
 {
     protected override IHost CreateHost(IHostBuilder builder)
     {
@@ -12,10 +12,10 @@ public class WebAppFactory : WebApplicationFactory<Program>
         {
             configurationBuilder
                 .AddJsonFile("appsettings.json")
-                .AddUserSecrets<BaseCommandTest>();
+                .AddUserSecrets<BaseCommandTest>()
+                .AddJsonFile("appsettings-without-admins.json");
         });
-        
+
         return base.CreateHost(builder);
     }
- 
 }

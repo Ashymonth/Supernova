@@ -33,7 +33,7 @@ Log.Logger = new LoggerConfiguration()
 
 Log.Information("Starting web host");
 
-var builder = WebApplication.CreateBuilder();
+var builder = WebApplication.CreateBuilder(args);
 
 try
 {
@@ -111,15 +111,15 @@ try
     app.UseOpenTelemetryPrometheusScrapingEndpoint("metrics");
 
     app.MapDefaultEndpoints();
-    
+
+    app.MapPost("updates",
+        async (UpdateHandler handler, Update update, CancellationToken ct) =>
+        {
+            return Results.Ok(await handler.HandleUpdateAsync(update, ct));
+        });
+
     if (builder.Environment.IsProduction())
     {
-        app.MapPost("updates",
-            async (UpdateHandler handler, Update update, CancellationToken ct) =>
-            {
-                return Results.Ok(await handler.HandleUpdateAsync(update, ct));
-            });
-        
         var botUrl = builder.Configuration.GetValue<string>("Bot:WebHookUrl");
         var bot = app.Services.GetRequiredService<ITelegramBotClient>();
         await bot.SetWebhookAsync(string.Empty);

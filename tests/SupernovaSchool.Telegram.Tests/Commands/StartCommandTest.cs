@@ -1,8 +1,5 @@
-using System.Net.Http.Json;
-using Microsoft.Extensions.DependencyInjection;
 using SupernovaSchool.Telegram.Tests.Fixtures;
-using Telegram.Bot;
-using Telegram.Bot.Types;
+using SupernovaSchool.Telegram.Tests.Helpers;
 
 namespace SupernovaSchool.Telegram.Tests.Commands;
 
@@ -18,29 +15,21 @@ public class StartCommandTest : BaseCommandTest, IClassFixture<WebAppFactory>
     [Fact]
     public async Task StartCommandTest_ShouldSendStartMessageAndUploadAllCommands()
     {
-        var client = _fixture.CreateClient();
+        var webClient = _fixture.CreateClient();
 
-        using var startCommandResponse = await client.PostAsJsonAsync("/updates", new Update
-        {
-            Message = new Message
-            {
-                Text = "/start", From = new User
-                {
-                    Id = Config.SenderId,
-                    Username = "@Ashymonth"
-                }
-            }
-        });
+        var expectedMessage = new Queue<string>([
+            CommandText.StartCommandMessage.Replace("\r\n", "\n") // we need this because in telegram message that contains \r\n is just \n
+        ]);
 
-        var message = await startCommandResponse.Content.ReadFromJsonAsync<Message>();
+        var tgClient = await WTelegramClientFactory.CreateClient(Config);
 
-        Assert.NotNull(message);
-        Assert.Equal(CommandText.StartCommandMessage.Replace("\r\n", "\n"), message.Text);
+        using var locker = new ManualResetEventSlim();
+
+        // ReSharper disable once AccessToDisposedClosure
+        tgClient.OnUpdates += update => TgClientOnOnUpdates(update, expectedMessage, locker);
         
-        var tgClient = _fixture.Services.GetRequiredService<ITelegramBotClient>();
+        await SendUpdate(webClient, Telegram.Commands.StartCommand);
 
-        var commands = await tgClient.GetMyCommandsAsync();
-
-        Assert.Equal(3, commands.Length);
+        locker.Wait();
     }
 }

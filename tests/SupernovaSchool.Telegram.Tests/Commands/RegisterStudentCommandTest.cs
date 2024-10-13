@@ -50,29 +50,10 @@ public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppF
         locker.Wait();
     }
 
-    private Task TgClientOnOnUpdates(UpdatesBase updateEvent, Queue<string> expectedMessagesInOrder,
-        ManualResetEventSlim locker)
+    protected override bool IsFinalUpdateInStep(string message)
     {
-        if (!updateEvent.Users.TryGetValue(Config.BotChatId, out _))
-        {
-            return Task.CompletedTask;
-        }
-
-        var update = updateEvent.UpdateList[0] as UpdateNewMessage;
-        var message = update!.message as Message;
-
-        var expectedMessage = expectedMessagesInOrder.Dequeue();
-
-        Assert.Equal(expectedMessage, message!.message);
-        if (message.message is "Обработка запроса..."
-            or "Для того, чтобы записаться к психологу, вам нужно указать свои данные.\n Для завершения команды введите 'Выйти'")
-        {
-            return Task.CompletedTask;
-        }
-
-        // ReSharper disable once AccessToDisposedClosure
-        locker.Reset();
-        return Task.CompletedTask;
+        return message is not DefaultStepMessage.ProcessingRequest && message !=
+            DefaultStepMessage.CreateInitialMessage(RegisterStudentStepMessage.CommandStartMessage);
     }
 
     public void Dispose()
