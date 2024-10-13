@@ -5,7 +5,7 @@ using SupernovaSchool.Telegram.Workflows.RegisterStudent;
 using TL;
 using WTelegram;
 
-namespace SupernovaSchool.Telegram.Tests;
+namespace SupernovaSchool.Telegram.Tests.Commands;
 
 public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppFactory>, IDisposable, IAsyncDisposable
 {
@@ -39,7 +39,7 @@ public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppF
         // ReSharper disable once AccessToDisposedClosure
         _tgClient.OnUpdates += update => TgClientOnOnUpdates(update, expectedMessagesInOrder, locker);
 
-        await SendUpdate(webClient, Commands.RegisterAsStudentCommand);
+        await SendUpdate(webClient, Telegram.Commands.RegisterAsStudentCommand);
 
         locker.Wait();
 

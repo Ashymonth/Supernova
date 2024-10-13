@@ -4,7 +4,7 @@ using SupernovaSchool.Telegram.Tests.Fixtures;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
-namespace SupernovaSchool.Telegram.Tests;
+namespace SupernovaSchool.Telegram.Tests.Commands;
 
 public class StartCommandTest : BaseCommandTest, IClassFixture<WebAppFactory>
 {
