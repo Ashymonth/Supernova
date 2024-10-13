@@ -25,10 +25,11 @@ public class CreateAppointmentWorkflow : IWorkflow<CreateAppointmentWorkflowData
                     .SendMessageToUser("Сначала вы должна зарегистрироваться с помощью команды /register_as_student",
                         false)
                     .EndWorkflow())
-            .SendInitialMessageToUser("Для записи к психологу выберите сотрудника из списка.")
+            .SendMessageToUser(
+                DefaultStepMessage.CreateInitialMessage("Для записи к психологу выберите сотрудника из списка."))
             .Then<SendTeacherListStep>()
             .Input(step => step.UserId, data => data.UserId)
-            .WaitForUserInlineData(data => data.TeacherId, o => Guid.Parse((o as UserMessage)!.Message))    
+            .WaitForUserInlineData(data => data.TeacherId, o => Guid.Parse((o as UserMessage)!.Message))
             .SendAvailableMetingDates()
             .Then<SendAvailableTimeSlotsStep>()
             .Input(slots => slots.TeacherId, data => data.TeacherId)

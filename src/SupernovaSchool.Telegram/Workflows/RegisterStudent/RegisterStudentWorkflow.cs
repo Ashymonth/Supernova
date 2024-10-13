@@ -19,21 +19,22 @@ public class RegisterStudentWorkflow : IWorkflow<RegisterStudentWorkflowData>
 
     public void Build(IWorkflowBuilder<RegisterStudentWorkflowData> builder)
     {
-        builder.SendInitialMessageToUser("Для того, чтобы записаться к психологу, вам нужно указать свои данные.")
-            .SendMessageToUser("Введите имя")
+        builder.SendMessageToUser(
+                DefaultStepMessage.CreateInitialMessage(RegisterStudentStepMessage.CommandStartMessage), true)
+            .SendMessageToUser(RegisterStudentStepMessage.InputName)
             .WaitForUserMessage(data => data.StudentName, message => message.Message)
             .SendMessageWithPagination(data => !AvailableClasses.Contains(data.PaginationMessage), workflowBuilder =>
             {
                 workflowBuilder
-                    .SendVariantsPage("Укажите ваш поток", data => AvailableClasses)
+                    .SendVariantsPage(RegisterStudentStepMessage.InputClass, data => AvailableClasses)
                     .WaitForUserMessage(data => data.PaginationMessage, message => message.Message);
             })
-            .SendMessageToUser("Обработка запроса...")
+            .SendMessageToUser(DefaultStepMessage.ProcessingRequest)
             .RegisterStudent()
             .Then<CleanupStep>()
             .Input(step => step.UserId, data => data.UserId)
-            .SendMessageToUser(data =>
-                    $"Вы успешно зарегистрировались. Теперь вы можете записаться к психологу.\nВаши данные:{data.StudentName}-{data.PaginationMessage}",
+            .SendMessageToUser(
+                data => RegisterStudentStepMessage.CreateSuccessMessage(data.StudentName, data.PaginationMessage),
                 false)
             .EndWorkflow();
     }

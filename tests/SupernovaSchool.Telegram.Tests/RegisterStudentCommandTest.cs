@@ -1,13 +1,16 @@
 using SupernovaSchool.Telegram.Tests.Fixtures;
 using SupernovaSchool.Telegram.Tests.Helpers;
+using SupernovaSchool.Telegram.Workflows;
+using SupernovaSchool.Telegram.Workflows.RegisterStudent;
 using TL;
+using WTelegram;
 
 namespace SupernovaSchool.Telegram.Tests;
 
 public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppFactory>, IDisposable, IAsyncDisposable
 {
     private readonly WebAppFactory _factory;
-    private WTelegram.Client _tgClient = null!;
+    private Client _tgClient = null!;
 
     public RegisterStudentCommandTest(WebAppFactory factory)
     {
@@ -21,35 +24,34 @@ public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppF
         const string expectedClass = "7";
 
         var expectedMessagesInOrder = new Queue<string>([
-            "Для того, чтобы записаться к психологу, вам нужно указать свои данные.\n Для завершения команды введите 'Выйти'",
-            "Введите имя",
-            "Укажите ваш поток",
-            "Обработка запроса...",
-            $"Вы успешно зарегистрировались. Теперь вы можете записаться к психологу.\nВаши данные:{expectedName}-{expectedClass}"
+            DefaultStepMessage.CreateInitialMessage(RegisterStudentStepMessage.CommandStartMessage),
+            RegisterStudentStepMessage.InputName,
+            RegisterStudentStepMessage.InputClass,
+            DefaultStepMessage.ProcessingRequest,
+            RegisterStudentStepMessage.CreateSuccessMessage(expectedName, expectedClass),
         ]);
 
-        var client = _factory.CreateClient();
+        var webClient = _factory.CreateClient();
 
         _tgClient = await WTelegramClientFactory.CreateClient(Config);
-        
+
         using var locker = new ManualResetEventSlim();
         // ReSharper disable once AccessToDisposedClosure
         _tgClient.OnUpdates += update => TgClientOnOnUpdates(update, expectedMessagesInOrder, locker);
 
-        await SendUpdate(client, Commands.RegisterAsStudentCommand);
+        await SendUpdate(webClient, Commands.RegisterAsStudentCommand);
 
         locker.Wait();
 
-        await SendUpdate(client, expectedName);
-        locker.Reset();
+        await SendUpdate(webClient, expectedName);
         locker.Wait();
 
-        await SendUpdate(client, expectedClass);
-        locker.Reset();
+        await SendUpdate(webClient, expectedClass);
         locker.Wait();
     }
 
-    private Task TgClientOnOnUpdates(UpdatesBase updateEvent, Queue<string> expectedMessagesInOrder, ManualResetEventSlim locker)
+    private Task TgClientOnOnUpdates(UpdatesBase updateEvent, Queue<string> expectedMessagesInOrder,
+        ManualResetEventSlim locker)
     {
         if (!updateEvent.Users.TryGetValue(Config.BotChatId, out _))
         {
@@ -69,7 +71,7 @@ public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppF
         }
 
         // ReSharper disable once AccessToDisposedClosure
-        locker.Set();
+        locker.Reset();
         return Task.CompletedTask;
     }
 

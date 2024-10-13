@@ -8,8 +8,6 @@ namespace SupernovaSchool.Telegram.Extensions;
 
 public static class StepBuilderMessageExtensions
 {
-    private const string InitialMessageTemplate = "{0}\n Для завершения команды введите 'Выйти'";
-
     public static IStepBuilder<TData, SendMessageToUser> SendMessageToUser<TData>(this IWorkflowBuilder<TData> builder,
         string message, bool b)
         where TData : IUserStep
@@ -19,26 +17,6 @@ public static class StepBuilderMessageExtensions
             .Input(step => step.UserId, data => data.UserId)
             .Input(step => step.Message, _ => message)
             .Input(step => step.ShouldBeDeleted, _ => b);
-    }
-
-    public static IStepBuilder<TData, SendMessageToUser> SendInitialMessageToUser<TData>(
-        this IWorkflowBuilder<TData> builder, string message)
-        where TData : IUserStep
-    {
-        return builder
-            .StartWith<SendMessageToUser>()
-            .Input(step => step.UserId, data => data.UserId)
-            .Input(step => step.Message, data => string.Format(InitialMessageTemplate, message));
-    }
-
-    public static IStepBuilder<TData, SendInitialMessageToUserStep> SendInitialMessageToUser<TData, TStep>(
-        this IStepBuilder<TData, TStep> builder, string message)
-        where TData : IUserStep where TStep : IStepBody
-    {
-        return builder
-            .Then<SendInitialMessageToUserStep>()
-            .Input(step => step.UserId, data => data.UserId)
-            .Input(step => step.Message, _ => string.Format(InitialMessageTemplate, message));
     }
 
     public static IStepBuilder<TData, SendMessageToUser> SendMessageToUser<TData, TStep>(
