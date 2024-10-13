@@ -86,7 +86,18 @@ try
     builder.Services.AddSingleton<WorkflowStaterCounterMetric>();
     builder.Services.AddSingleton<StepDurationTimeMeter>();
 
+    if (builder.Environment.IsDevelopment())
+    {
+        builder.Services.AddHostedService<BackgroundTelegramService>();
+    }
+
     var app = builder.Build();
+
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<SupernovaSchoolDbContext>();
+        db.Database.Migrate();
+    }
 
     if (builder.Environment.IsDevelopment())
     {
@@ -100,17 +111,21 @@ try
     app.UseOpenTelemetryPrometheusScrapingEndpoint("metrics");
 
     app.MapDefaultEndpoints();
-
-    app.MapPost("updates", async (UpdateHandler handler, Update update, CancellationToken ct) =>
+    
+    if (builder.Environment.IsProduction())
     {
-        return Results.Ok( await handler.HandleUpdateAsync(update, ct));
-    });
-
-    var botUrl = builder.Configuration.GetValue<string>("Bot:WebHookUrl");
-    var bot = app.Services.GetRequiredService<ITelegramBotClient>();
-    await bot.SetWebhookAsync(string.Empty);
-    await bot.SetWebhookAsync(botUrl! + "/updates",
-        allowedUpdates: [UpdateType.Message, UpdateType.CallbackQuery], dropPendingUpdates: true);
+        app.MapPost("updates",
+            async (UpdateHandler handler, Update update, CancellationToken ct) =>
+            {
+                return Results.Ok(await handler.HandleUpdateAsync(update, ct));
+            });
+        
+        var botUrl = builder.Configuration.GetValue<string>("Bot:WebHookUrl");
+        var bot = app.Services.GetRequiredService<ITelegramBotClient>();
+        await bot.SetWebhookAsync(string.Empty);
+        await bot.SetWebhookAsync(botUrl! + "/updates",
+            allowedUpdates: [UpdateType.Message, UpdateType.CallbackQuery], dropPendingUpdates: true);
+    }
 
     var workflow = app.Services.GetRequiredService<IWorkflowHost>();
 
@@ -135,6 +150,6 @@ finally
     Log.CloseAndFlush();
 }
 
-public  partial class Program
+public partial class Program
 {
 }

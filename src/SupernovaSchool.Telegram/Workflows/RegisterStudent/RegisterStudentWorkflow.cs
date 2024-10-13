@@ -19,7 +19,7 @@ public class RegisterStudentWorkflow : IWorkflow<RegisterStudentWorkflowData>
 
     public void Build(IWorkflowBuilder<RegisterStudentWorkflowData> builder)
     {
-        builder.SendMessageToUser("Для того, чтобы записаться к психологу, вам нужно указать свои данные.", true)
+        builder.SendInitialMessageToUser("Для того, чтобы записаться к психологу, вам нужно указать свои данные.")
             .SendMessageToUser("Введите имя")
             .WaitForUserMessage(data => data.StudentName, message => message.Message)
             .SendMessageWithPagination(data => !AvailableClasses.Contains(data.PaginationMessage), workflowBuilder =>
@@ -32,7 +32,9 @@ public class RegisterStudentWorkflow : IWorkflow<RegisterStudentWorkflowData>
             .RegisterStudent()
             .Then<CleanupStep>()
             .Input(step => step.UserId, data => data.UserId)
-            .SendMessageToUser("Вы успешно зарегистрировались. Теперь вы можете записаться к психологу", false)
+            .SendMessageToUser(data =>
+                    $"Вы успешно зарегистрировались. Теперь вы можете записаться к психологу.\nВаши данные:{data.StudentName}-{data.PaginationMessage}",
+                false)
             .EndWorkflow();
     }
 }

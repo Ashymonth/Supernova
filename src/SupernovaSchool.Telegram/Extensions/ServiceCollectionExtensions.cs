@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using SupernovaSchool.Telegram.Extensions.Steps;
 using SupernovaSchool.Telegram.Middlewares;
 using SupernovaSchool.Telegram.Steps;
 using SupernovaSchool.Telegram.Steps.Common;
@@ -26,15 +27,8 @@ public static class ServiceCollectionExtensions
         services.AddWorkflowMiddleware<DiagnosticMiddleware>();
         services.AddWorkflowStepMiddleware<StepDurationMiddleware>();
 
-        services.AddTransient<SendMessageToUser>();
-        services.AddTransient<SendMessageWithOptionsToUser>();
-        services.AddTransient<SendInitialMessageToUserStep>();
-        services.AddTransient<SendInlineDataMessageToUser>();
-        services.AddTransient<CleanupStep>();
-
-        services.AddTransient<SendTeacherListStep>();
-        services.AddTransient<SendAvailableTimeSlotsStep>();
-        services.AddTransient<RegisterStudentStep>();
+        services.AddBaseSteps();
+        services.AddRegisterStudentSteps();
 
         services.AddTransient<EnsureThatStudentRegisteredStep>();
         services.AddTransient<EnsureThatUserDosentRegisteredOnMeeting>();

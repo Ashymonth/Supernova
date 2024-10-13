@@ -9,10 +9,7 @@ namespace SupernovaSchool.Telegram;
 
 public class UpdateHandler
 {
-  
-    private const string StartCommandName = "/start";
-
-    private readonly ITelegramBotClient _telegramBotClient;
+    protected readonly ITelegramBotClient _telegramBotClient;
     private readonly IWorkflowHost _workflowHost;
     private readonly CommandRegistry _commandRegistry;
     private readonly IUserSessionStorage _userSessionStorage;

@@ -21,6 +21,16 @@ public static class StepBuilderMessageExtensions
             .Input(step => step.ShouldBeDeleted, _ => b);
     }
 
+    public static IStepBuilder<TData, SendMessageToUser> SendInitialMessageToUser<TData>(
+        this IWorkflowBuilder<TData> builder, string message)
+        where TData : IUserStep
+    {
+        return builder
+            .StartWith<SendMessageToUser>()
+            .Input(step => step.UserId, data => data.UserId)
+            .Input(step => step.Message, data => string.Format(InitialMessageTemplate, message));
+    }
+
     public static IStepBuilder<TData, SendInitialMessageToUserStep> SendInitialMessageToUser<TData, TStep>(
         this IStepBuilder<TData, TStep> builder, string message)
         where TData : IUserStep where TStep : IStepBody
@@ -53,14 +63,15 @@ public static class StepBuilderMessageExtensions
     }
 
     public static IStepBuilder<TData, SendMessageToUser> SendMessageToUser<TData, TStep>(
-        this IStepBuilder<TData, TStep> builder, Func<TData, string> messageFunc)
+        this IStepBuilder<TData, TStep> builder, Func<TData, string> messageFunc, bool deleteMessage = true)
         where TStep : IStepBody
         where TData : IUserStep
     {
         return builder
             .Then<SendMessageToUser>()
             .Input(step => step.UserId, data => data.UserId)
-            .Input(step => step.Message, data => messageFunc(data));
+            .Input(step => step.Message, data => messageFunc(data))
+            .Input(step => step.ShouldBeDeleted, step => deleteMessage);
     }
 
     public static IStepBuilder<TData, WaitFor> WaitForUserMessage<TData, TStep, TOutput>(
