@@ -21,23 +21,24 @@ public class CreateTeacherWorkflow : IWorkflow<CreateTeacherWorkflowData>
                 workflowBuilder
                     .Then<CleanupStep>()
                     .Input(step => step.UserId, data => data.UserId)
-                    .SendMessageToUser("У вас недостаточно прав для этой команды", false)
+                    .SendMessageToUser(CreateTeacherStepMessage.NotEnoughRightToCreateATeacher, false)
                     .EndWorkflow())
-            .SendMessageToUser("Введите Фио")
+            .SendMessageToUser(CreateTeacherStepMessage.InputName)
             .WaitForUserMessage(data => data.TeacherName, message => message.Message)
-            .SendMessageToUser("Введите логин от яндекс календаря")
+            .SendMessageToUser(CreateTeacherStepMessage.InputLoginFromYandexCalendar)
             .WaitForUserMessage(data => data.YandexCalendarLogin, message => message.Message)
-            .SendMessageToUser(
-                "Введите пароль от яндекс календаря\n Как получить пароль: https://id.yandex.ru/security/app-passwords")
+            .SendMessageToUser(CreateTeacherStepMessage.InputPasswordFromYandexCalendar)
             .WaitForUserMessage(data => data.YandexCalendarPassword, message => message.Message)
-            .SendMessageToUser("Обработка запроса")
+            .SendMessageToUser(DefaultStepMessage.ProcessingRequest)
             .Then<CreateTeacherStep>()
             .Input(step => step.Name, data => data.TeacherName)
             .Input(step => step.Login, data => data.YandexCalendarLogin)
             .Input(step => step.Password, data => data.YandexCalendarPassword)
             .Then<CleanupStep>()
             .Input(step => step.UserId, data => data.UserId)
-            .SendMessageToUser("Учитель успешно добавлен", false)
+            .SendMessageToUser(
+                data => CreateTeacherStepMessage.CreateSuccessMessage(data.TeacherName, data.YandexCalendarLogin),
+                false)
             .OnError(WorkflowErrorHandling.Terminate)
             .EndWorkflow();
     }
