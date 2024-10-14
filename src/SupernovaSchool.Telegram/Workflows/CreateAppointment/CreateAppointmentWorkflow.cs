@@ -22,11 +22,10 @@ public class CreateAppointmentWorkflow : IWorkflow<CreateAppointmentWorkflowData
                 workflowBuilder
                     .Then<CleanupStep>()
                     .Input(step => step.UserId, data => data.UserId)
-                    .SendMessageToUser("Сначала вы должна зарегистрироваться с помощью команды /register_as_student",
-                        false)
+                    .SendMessageToUser(CreateAppointmentStepMessage.UserNotRegistered, false)
                     .EndWorkflow())
             .SendMessageToUser(
-                DefaultStepMessage.CreateInitialMessage("Для записи к психологу выберите сотрудника из списка."))
+                DefaultStepMessage.CreateInitialMessage(CreateAppointmentStepMessage.ChooseTeacherFromList))
             .Then<SendTeacherListStep>()
             .Input(step => step.UserId, data => data.UserId)
             .WaitForUserInlineData(data => data.TeacherId, o => Guid.Parse((o as UserMessage)!.Message))
@@ -40,10 +39,9 @@ public class CreateAppointmentWorkflow : IWorkflow<CreateAppointmentWorkflowData
             .Do(workflowBuilder => workflowBuilder
                 .Then<CleanupStep>()
                 .Input(step => step.UserId, data => data.UserId)
-                .SendMessageToUser(
-                    "На выбранный день нет доступх мест для записи. Выберите другой день или другого психолога", false)
+                .SendMessageToUser(CreateAppointmentStepMessage.NoAvailableTimeSlots, false)
                 .EndWorkflow())
-            .SendMessageToUser("Обработка запроса...")
+            .SendMessageToUser(DefaultStepMessage.ProcessingRequest)
             .Then<EnsureThatUserDosentRegisteredOnMeeting>()
             .Input(meeting => meeting.UserId, data => data.UserId)
             .Input(meeting => meeting.Date, data => DateOnly.Parse(data.PaginationMessage))
@@ -53,22 +51,18 @@ public class CreateAppointmentWorkflow : IWorkflow<CreateAppointmentWorkflowData
                     .Then<CleanupStep>()
                     .Input(step => step.UserId, data => data.UserId)
                     .SendMessageToUser(
-                        "У вас уже есть запись на этот день. На 1 день можно записать не больше 1 раза", false)
+                        CreateAppointmentStepMessage.AlreadyHaveAppointmentOnSelectedDay, false)
                     .EndWorkflow())
-            .SendVariants("Выберите время для записи",
-                data => data.AvailableTimeSlots.Select(slot => $"{slot.Start} -{slot.End}").ToArray())
-            .WaitForUserMessage(data => data.PaginationMessage, message => message.Message)
-            //
             .While(data => data.GetTimeSlot() == null || !data.AvailableTimeSlots.Contains(data.GetTimeSlot()))
             .Do(builder1 =>
             {
-                builder1.SendVariantsPage("Выберите время для записи",
+                builder1.SendVariantsPage(CreateAppointmentStepMessage.SelectTimeSlot,
                         data => data.AvailableTimeSlots
                             .Select(slot => $"{slot.Start} -{slot.End}")
                             .ToArray())
                     .WaitForUserMessage(data => data.PaginationMessage, message => message.Message);
             })
-            .SendMessageToUser("Обработка запроса...")
+            .SendMessageToUser(DefaultStepMessage.ProcessingRequest)
             .Then<CreateMeetingStep>()
             .Input(appointment => appointment.UserId, data => data.UserId)
             .Input(appointment => appointment.TeacherId, data => data.TeacherId)
@@ -76,7 +70,9 @@ public class CreateAppointmentWorkflow : IWorkflow<CreateAppointmentWorkflowData
             .Input(appointment => appointment.AppointmentDate, data => data.AppointmentDate)
             .Then<CleanupStep>()
             .Input(step => step.UserId, data => data.UserId)
-            .SendMessageToUser("Вы успешно записаны", false)
+            .SendMessageToUser(
+                data => CreateAppointmentStepMessage.CreateSuccessMessage(data.TeacherId.ToString(),
+                    data.AppointmentDate.ToShortDateString(), data.PaginationMessage), false)
             .EndWorkflow();
     }
 }
