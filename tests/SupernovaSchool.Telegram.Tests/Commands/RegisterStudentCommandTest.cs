@@ -4,9 +4,11 @@ using SupernovaSchool.Telegram.Workflows;
 using SupernovaSchool.Telegram.Workflows.RegisterStudent;
 using TL;
 using WTelegram;
+using Xunit.Extensions.Ordering;
 
 namespace SupernovaSchool.Telegram.Tests.Commands;
 
+[Collection("CommandsCollection"), Order(2)]
 public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppFactory>, IDisposable, IAsyncDisposable
 {
     private readonly WebAppFactory _factory;

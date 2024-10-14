@@ -7,12 +7,14 @@ using SupernovaSchool.Telegram.Tests.Helpers;
 using SupernovaSchool.Telegram.Workflows;
 using SupernovaSchool.Telegram.Workflows.CreateTeacher;
 using WTelegram;
+using Xunit.Extensions.Ordering;
 using YandexCalendar.Net;
 using YandexCalendar.Net.Models;
 
 namespace SupernovaSchool.Telegram.Tests.Commands;
 
-public class CreateTeacherCommandTest : BaseCommandTest, IClassFixture<WebAppFactoryWhenUserIsNotAdmin>
+[Collection("CommandsCollection"), Order(3)]
+public class CreateTeacherCommandTest : BaseCommandTest, IClassFixture<WebAppFactoryWhenUserIsNotAdmin>, IDisposable, IAsyncDisposable
 {
     private const string ExpectedYandexName = "Test name";
     private const string ExpectedYandexLogin = "Test login";
@@ -51,7 +53,7 @@ public class CreateTeacherCommandTest : BaseCommandTest, IClassFixture<WebAppFac
         _factory = factory;
     }
 
-    [Fact]
+    [Fact, Order(1)]
     public async Task CreateTeacherTest_WhenUserIsNotAnAdmin_ReturnErrorMessage()
     {
         var expectedMessagesInOrder = new Queue<string>([
@@ -73,7 +75,7 @@ public class CreateTeacherCommandTest : BaseCommandTest, IClassFixture<WebAppFac
         Assert.True(expectedMessagesInOrder.Count == 0);
     }
 
-    [Fact]
+    [Fact, Order(2)]
     public async Task CreateTeacherTest_WhenUserIsAnAdmin_ShouldCreateATeacher()
     {
         var expectedMessagesInOrder = new Queue<string>([
@@ -116,5 +118,19 @@ public class CreateTeacherCommandTest : BaseCommandTest, IClassFixture<WebAppFac
     protected override bool IsFinalUpdateInStep(string message)
     {
         return message != DefaultStepMessage.ProcessingRequest;
+    }
+
+    public void Dispose()
+    {
+        _factory.Dispose();
+        _whenAdminFactory.Dispose();
+        _tgClient.Dispose();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await _factory.DisposeAsync();
+        await _whenAdminFactory.DisposeAsync();
+        await _tgClient.DisposeAsync();
     }
 }

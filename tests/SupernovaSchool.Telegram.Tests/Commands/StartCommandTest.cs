@@ -1,8 +1,10 @@
 using SupernovaSchool.Telegram.Tests.Fixtures;
 using SupernovaSchool.Telegram.Tests.Helpers;
+using Xunit.Extensions.Ordering;
 
 namespace SupernovaSchool.Telegram.Tests.Commands;
 
+[Collection("CommandsCollection"), Order(1)]
 public class StartCommandTest : BaseCommandTest, IClassFixture<WebAppFactory>
 {
     private readonly WebAppFactory _fixture;
@@ -21,7 +23,7 @@ public class StartCommandTest : BaseCommandTest, IClassFixture<WebAppFactory>
             CommandText.StartCommandMessage // we need this because in telegram message that contains \r\n is just \n
         ]);
 
-        var tgClient = await WTelegramClientFactory.CreateClient(Config);
+        await using var tgClient = await WTelegramClientFactory.CreateClient(Config);
 
         using var locker = new AutoResetEvent(false);
 
