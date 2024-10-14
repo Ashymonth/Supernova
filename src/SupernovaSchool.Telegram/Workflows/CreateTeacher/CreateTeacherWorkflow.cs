@@ -1,4 +1,5 @@
 using SupernovaSchool.Telegram.Extensions;
+using SupernovaSchool.Telegram.Extensions.Steps;
 using SupernovaSchool.Telegram.Steps;
 using SupernovaSchool.Telegram.Workflows.CreateTeacher.Steps;
 using WorkflowCore.Interface;
@@ -18,11 +19,7 @@ public class CreateTeacherWorkflow : IWorkflow<CreateTeacherWorkflowData>
             .Input(step => step.UserId, data => data.UserId)
             .Output(data => data.IsAdmin, step => step.IsAdmin)
             .If(data => !data.IsAdmin).Do(workflowBuilder =>
-                workflowBuilder
-                    .Then<CleanupStep>()
-                    .Input(step => step.UserId, data => data.UserId)
-                    .SendMessageToUser(CreateTeacherStepMessage.NotEnoughRightToCreateATeacher, false)
-                    .EndWorkflow())
+                workflowBuilder.CleanupAndEndWorkflow(CreateTeacherStepMessage.NotEnoughRightToCreateATeacher))
             .SendMessageToUser(CreateTeacherStepMessage.InputName)
             .WaitForUserMessage(data => data.TeacherName, message => message.Message)
             .SendMessageToUser(CreateTeacherStepMessage.InputLoginFromYandexCalendar)
@@ -34,12 +31,7 @@ public class CreateTeacherWorkflow : IWorkflow<CreateTeacherWorkflowData>
             .Input(step => step.Name, data => data.TeacherName)
             .Input(step => step.Login, data => data.YandexCalendarLogin)
             .Input(step => step.Password, data => data.YandexCalendarPassword)
-            .Then<CleanupStep>()
-            .Input(step => step.UserId, data => data.UserId)
-            .SendMessageToUser(
-                data => CreateTeacherStepMessage.CreateSuccessMessage(data.TeacherName, data.YandexCalendarLogin),
-                false)
-            .OnError(WorkflowErrorHandling.Terminate)
-            .EndWorkflow();
+            .CleanupAndEndWorkflow(data =>
+                CreateTeacherStepMessage.CreateSuccessMessage(data.TeacherName, data.YandexCalendarLogin));
     }
 }

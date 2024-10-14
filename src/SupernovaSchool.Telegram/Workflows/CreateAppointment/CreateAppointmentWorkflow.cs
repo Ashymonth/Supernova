@@ -1,4 +1,5 @@
 using SupernovaSchool.Telegram.Extensions;
+using SupernovaSchool.Telegram.Extensions.Steps;
 using SupernovaSchool.Telegram.Steps;
 using SupernovaSchool.Telegram.Workflows.CreateAppointment.Extensions;
 using SupernovaSchool.Telegram.Workflows.CreateAppointment.Steps;
@@ -19,11 +20,7 @@ public class CreateAppointmentWorkflow : IWorkflow<CreateAppointmentWorkflowData
             .Input(step => step.UserId, data => data.UserId)
             .Output(data => data.IsStudentRegistered, step => step.IsStudentRegistered)
             .If(data => !data.IsStudentRegistered).Do(workflowBuilder =>
-                workflowBuilder
-                    .Then<CleanupStep>()
-                    .Input(step => step.UserId, data => data.UserId)
-                    .SendMessageToUser(CreateAppointmentStepMessage.UserNotRegistered, false)
-                    .EndWorkflow())
+                workflowBuilder.CleanupAndEndWorkflow(CreateAppointmentStepMessage.UserNotRegistered))
             .SendMessageToUser(
                 DefaultStepMessage.CreateInitialMessage(CreateAppointmentStepMessage.ChooseTeacherFromList))
             .Then<SendTeacherListStep>()
@@ -36,23 +33,17 @@ public class CreateAppointmentWorkflow : IWorkflow<CreateAppointmentWorkflowData
             .Output(data => data.AvailableTimeSlots, slots => slots.AvailableSlots)
             .If(data => data.AvailableTimeSlots.Length == 0)
             //
-            .Do(workflowBuilder => workflowBuilder
-                .Then<CleanupStep>()
-                .Input(step => step.UserId, data => data.UserId)
-                .SendMessageToUser(CreateAppointmentStepMessage.NoAvailableTimeSlots, false)
-                .EndWorkflow())
+            .Do(workflowBuilder =>
+                workflowBuilder.CleanupAndEndWorkflow(CreateAppointmentStepMessage.NoAvailableTimeSlots))
             .SendMessageToUser(DefaultStepMessage.ProcessingRequest)
             .Then<EnsureThatUserDosentRegisteredOnMeeting>()
             .Input(meeting => meeting.UserId, data => data.UserId)
             .Input(meeting => meeting.Date, data => DateOnly.Parse(data.PaginationMessage))
             .Output(data => data.UserHasAppointment, user => user.HasAppointment)
-            .If(data => data.UserHasAppointment).Do(workflowBuilder =>
-                workflowBuilder
-                    .Then<CleanupStep>()
-                    .Input(step => step.UserId, data => data.UserId)
-                    .SendMessageToUser(
-                        CreateAppointmentStepMessage.AlreadyHaveAppointmentOnSelectedDay, false)
-                    .EndWorkflow())
+            .If(data => data.UserHasAppointment).Do(
+                workflowBuilder => workflowBuilder.CleanupAndEndWorkflow(CreateAppointmentStepMessage
+                    .AlreadyHaveAppointmentOnSelectedDay)
+            )
             .While(data => data.GetTimeSlot() == null || !data.AvailableTimeSlots.Contains(data.GetTimeSlot()))
             .Do(builder1 =>
             {
@@ -68,11 +59,7 @@ public class CreateAppointmentWorkflow : IWorkflow<CreateAppointmentWorkflowData
             .Input(appointment => appointment.TeacherId, data => data.TeacherId)
             .Input(appointment => appointment.AppointmentSlot, data => data.GetTimeSlot())
             .Input(appointment => appointment.AppointmentDate, data => data.AppointmentDate)
-            .Then<CleanupStep>()
-            .Input(step => step.UserId, data => data.UserId)
-            .SendMessageToUser(
-                data => CreateAppointmentStepMessage.CreateSuccessMessage(data.TeacherId.ToString(),
-                    data.AppointmentDate.ToShortDateString(), data.PaginationMessage), false)
-            .EndWorkflow();
+            .CleanupAndEndWorkflow(data => CreateAppointmentStepMessage.CreateSuccessMessage(data.TeacherId.ToString(),
+                data.AppointmentDate.ToShortDateString(), data.PaginationMessage));
     }
 }

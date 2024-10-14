@@ -1,4 +1,5 @@
 using SupernovaSchool.Telegram.Extensions;
+using SupernovaSchool.Telegram.Extensions.Steps;
 using SupernovaSchool.Telegram.Steps;
 using SupernovaSchool.Telegram.Steps.Common;
 using SupernovaSchool.Telegram.Workflows.RegisterStudent.Extensions;
@@ -31,11 +32,7 @@ public class RegisterStudentWorkflow : IWorkflow<RegisterStudentWorkflowData>
             })
             .SendMessageToUser(DefaultStepMessage.ProcessingRequest)
             .RegisterStudent()
-            .Then<CleanupStep>()
-            .Input(step => step.UserId, data => data.UserId)
-            .SendMessageToUser(
-                data => RegisterStudentStepMessage.CreateSuccessMessage(data.StudentName, data.PaginationMessage),
-                false)
-            .EndWorkflow();
+            .CleanupAndEndWorkflow(data =>
+                RegisterStudentStepMessage.CreateSuccessMessage(data.StudentName, data.PaginationMessage));
     }
 }
