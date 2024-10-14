@@ -105,6 +105,8 @@ public class CreateTeacherCommandTest : BaseCommandTest, IClassFixture<WebAppFac
         await SendUpdate(webClient, ExpectedYandexPassword);
 
         locker.WaitOne();
+
+        _mock.VerifyAll();
     }
 
     protected override bool IsFinalUpdateInStep(string message)
