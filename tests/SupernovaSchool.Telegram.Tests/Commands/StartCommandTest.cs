@@ -17,7 +17,7 @@ public class StartCommandTest : BaseCommandTest, IClassFixture<WebAppFactory>
     {
         var webClient = _fixture.CreateClient();
 
-        var expectedMessage = new Queue<string>([
+        var expectedMessagesInOrder = new Queue<string>([
             CommandText.StartCommandMessage // we need this because in telegram message that contains \r\n is just \n
         ]);
 
@@ -26,10 +26,12 @@ public class StartCommandTest : BaseCommandTest, IClassFixture<WebAppFactory>
         using var locker = new AutoResetEvent(false);
 
         // ReSharper disable once AccessToDisposedClosure
-        tgClient.OnUpdates += update => TgClientOnOnUpdates(update, expectedMessage, locker);
+        tgClient.OnUpdates += update => TgClientOnOnUpdates(update, expectedMessagesInOrder, locker);
         
         await SendUpdate(webClient, Telegram.Commands.StartCommand);
 
         locker.WaitOne();
+
+        Assert.True(expectedMessagesInOrder.Count == 0);
     }
 }

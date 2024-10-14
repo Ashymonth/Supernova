@@ -4,7 +4,7 @@ public static class DefaultStepMessage
 {
     private const string InitialMessageTemplate = """
                                                   {0}
-                                                  Для завершения команды введите 'Выйти'";
+                                                  Для завершения команды введите 'Выйти'"
                                                   """;
 
     public const string ProcessingRequest = "Обработка запроса...";

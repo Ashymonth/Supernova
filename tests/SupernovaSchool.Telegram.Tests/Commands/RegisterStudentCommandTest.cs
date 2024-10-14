@@ -48,12 +48,15 @@ public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppF
 
         await SendUpdate(webClient, expectedClass);
         locker.WaitOne();
+
+        Assert.True(expectedMessagesInOrder.Count == 0);
     }
 
     protected override bool IsFinalUpdateInStep(string message)
     {
         return message is not DefaultStepMessage.ProcessingRequest && message !=
-            DefaultStepMessage.CreateInitialMessage(RegisterStudentStepMessage.CommandStartMessage);
+            DefaultStepMessage.CreateInitialMessage(RegisterStudentStepMessage.CommandStartMessage)
+                .Replace("\r\n", "\n");
     }
 
     public void Dispose()

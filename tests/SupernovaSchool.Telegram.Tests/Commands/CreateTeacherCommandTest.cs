@@ -69,6 +69,8 @@ public class CreateTeacherCommandTest : BaseCommandTest, IClassFixture<WebAppFac
         await SendUpdate(webClient, Telegram.Commands.CreateTeacherCommand);
 
         locker.WaitOne();
+        
+        Assert.True(expectedMessagesInOrder.Count == 0);
     }
 
     [Fact]
@@ -107,6 +109,8 @@ public class CreateTeacherCommandTest : BaseCommandTest, IClassFixture<WebAppFac
         locker.WaitOne();
 
         _mock.VerifyAll();
+        
+        Assert.True(expectedMessagesInOrder.Count == 0);
     }
 
     protected override bool IsFinalUpdateInStep(string message)
