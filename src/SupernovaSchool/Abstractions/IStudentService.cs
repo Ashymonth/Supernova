@@ -6,5 +6,5 @@ public interface IStudentService
 {
     Task<Student> AddOrUpdateAsync(Student student, CancellationToken ct = default);
 
-    Task<Student?> GetStudentAsync(string studentId);
+    Task<Student?> GetStudentAsync(string studentId, CancellationToken ct = default);
 }

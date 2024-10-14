@@ -15,6 +15,8 @@ public class EnsureThatStudentRegisteredStep : IUserStep, IStepBody
     }
 
     public bool IsStudentRegistered { get; set; }
+    
+    public string UserId { get; set; } = null!;
 
     public async Task<ExecutionResult> RunAsync(IStepExecutionContext context)
     {
@@ -25,5 +27,4 @@ public class EnsureThatStudentRegisteredStep : IUserStep, IStepBody
         return ExecutionResult.Next();
     }
 
-    public string UserId { get; set; } = null!;
 }

@@ -22,7 +22,7 @@ public class StudentService : IStudentService
     public async Task<Student> AddOrUpdateAsync(Student student, CancellationToken ct = default)
     {
         var existedStudent = await _studentRepository.GetByIdAsync(student.Id, ct);
-        
+
         if (existedStudent is null)
         {
             existedStudent = student;
@@ -41,11 +41,11 @@ public class StudentService : IStudentService
         return student;
     }
 
-    public async Task<Student?> GetStudentAsync(string studentId)
+    public async Task<Student?> GetStudentAsync(string studentId, CancellationToken ct = default)
     {
         return await _memoryCache.GetOrCreateAsync(CreateCacheKey(studentId), async entry =>
         {
-            var student = await _studentRepository.GetByIdAsync(studentId);
+            var student = await _studentRepository.GetByIdAsync(studentId, ct);
 
             entry.SetValue(student);
             entry.SetAbsoluteExpiration(TimeSpan.FromMinutes(5));
