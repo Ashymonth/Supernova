@@ -1,13 +1,10 @@
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using SupernovaSchool.Abstractions;
 using SupernovaSchool.Models;
-using SupernovaSchool.Telegram.Tests.Helpers;
 using SupernovaSchool.Telegram.Workflows.CreateAppointment;
-using WTelegram;
 using Xunit.Extensions.Ordering;
 
 namespace SupernovaSchool.Telegram.Tests.Commands;
@@ -17,7 +14,6 @@ public class AddAppointmentCommandTest : BaseCommandTest
 {
     private readonly Mock<IStudentService> _mock = new();
     private readonly WebApplicationFactory<Program> _factory;
-    private Client _tgClient = null!;
 
     public AddAppointmentCommandTest()
     {
@@ -41,7 +37,7 @@ public class AddAppointmentCommandTest : BaseCommandTest
                 });
             });
     }
-
+    
     [Fact]
     public async Task CreateAppointmentAsync_WhenStudentNotRegistered_ShouldReturnErrorMessage()
     {
@@ -49,22 +45,16 @@ public class AddAppointmentCommandTest : BaseCommandTest
                 studentService.GetStudentAsync(It.Is<string>(userId => userId == Config.SenderId.ToString()),
                     It.IsAny<CancellationToken>()))
             .ReturnsAsync((Student?)null);
-
+        
+        await InitializeAsync(_factory);
+        
         var expectedMessagesInOrder = new Queue<string>([
             CreateAppointmentStepMessage.UserNotRegistered,
         ]);
 
-        var webClient = _factory.CreateClient();
+        SubscribeOnUpdates(expectedMessagesInOrder);
 
-        _tgClient = await WTelegramClientFactory.CreateClient(Config);
-
-        using var locker = new AutoResetEvent(false);
-        // ReSharper disable once AccessToDisposedClosure
-        _tgClient.OnUpdates += update => TgClientOnOnUpdates(update, expectedMessagesInOrder, locker);
-
-        await SendUpdate(webClient, Telegram.Commands.CreateAppointmentCommand);
-
-        locker.WaitOne();
+        await SendUpdate(Telegram.Commands.CreateAppointmentCommand);
 
         Assert.True(expectedMessagesInOrder.Count == 0);
     }

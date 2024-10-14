@@ -1,11 +1,14 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
+using SupernovaSchool.Telegram.Tests.Helpers;
 using SupernovaSchool.Telegram.Tests.Options;
 using SupernovaSchool.Telegram.Workflows;
 using SupernovaSchool.Telegram.Workflows.RegisterStudent;
 using Telegram.Bot;
 using TL;
+using WTelegram;
 using TgUpdate = Telegram.Bot.Types.Update;
 using TgMessage = Telegram.Bot.Types.Message;
 using TgUser = Telegram.Bot.Types.User;
@@ -13,9 +16,9 @@ using TgUser = Telegram.Bot.Types.User;
 
 namespace SupernovaSchool.Telegram.Tests;
 
-public class BaseCommandTest
+public class BaseCommandTest : IDisposable
 {
-    public BaseCommandTest()
+    protected BaseCommandTest()
     {
         var configuration = new ConfigurationBuilder()
             .AddUserSecrets<BaseCommandTest>()
@@ -26,19 +29,33 @@ public class BaseCommandTest
 
         Config = config;
     }
+    protected AutoResetEvent Locker { get; } = new(false);
+    
+    protected Client WTelegramClient { get; private set; } = null!;
 
-    public WTelegramConfig Config { get; }
+    protected WTelegramConfig Config { get; }
 
-    protected async Task<Message?> SendUpdate(HttpClient client, string message)
+    protected HttpClient AppClient { get; private set; } = null!;
+
+    protected async Task InitializeAsync(WebApplicationFactory<Program> applicationFactory)
     {
-        using var response = await client.PostAsJsonAsync("/updates", new TgUpdate
+        WTelegramClient = await WTelegramClientFactory.CreateClient(Config);
+        AppClient = applicationFactory.CreateClient();
+    }
+
+    protected void SubscribeOnUpdates(Queue<string> expectedMessagesInOrder)
+    {
+        WTelegramClient.OnUpdates += update => TgClientOnOnUpdates(update, expectedMessagesInOrder, Locker);
+    }
+
+    protected async Task SendUpdate(string message)
+    {
+        using var response = await AppClient.PostAsJsonAsync("/updates", new TgUpdate
         {
             Message = new TgMessage { Text = message, From = new TgUser { Id = Config.SenderId } }
         });
 
-        var content = await response.Content.ReadAsStringAsync();
-
-        return content.Length != 0 ? JsonSerializer.Deserialize<Message>(content) : null;
+        Locker.WaitOne();
     }
     protected Task TgClientOnOnUpdates(UpdatesBase updateEvent, Queue<string> expectedMessagesInOrder,
         AutoResetEvent locker)
@@ -73,5 +90,12 @@ public class BaseCommandTest
     protected virtual bool IsFinalUpdateInStep(string message)
     {
         return true;
+    }
+
+    public void Dispose()
+    {
+        Locker.Dispose();
+        WTelegramClient.Dispose();
+        AppClient.Dispose();
     }
 }

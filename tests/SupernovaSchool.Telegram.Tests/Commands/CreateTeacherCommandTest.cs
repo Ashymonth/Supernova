@@ -14,7 +14,7 @@ using YandexCalendar.Net.Models;
 namespace SupernovaSchool.Telegram.Tests.Commands;
 
 [Collection("CommandsCollection"), Order(3)]
-public class CreateTeacherCommandTest : BaseCommandTest, IClassFixture<WebAppFactoryWhenUserIsNotAdmin>, IDisposable, IAsyncDisposable
+public class CreateTeacherCommandTest : BaseCommandTest, IClassFixture<WebAppFactoryWhenUserIsNotAdmin>
 {
     private const string ExpectedYandexName = "Test name";
     private const string ExpectedYandexLogin = "Test login";
@@ -56,28 +56,24 @@ public class CreateTeacherCommandTest : BaseCommandTest, IClassFixture<WebAppFac
     [Fact, Order(1)]
     public async Task CreateTeacherTest_WhenUserIsNotAnAdmin_ReturnErrorMessage()
     {
+        await InitializeAsync(_factory);
+        
         var expectedMessagesInOrder = new Queue<string>([
             CreateTeacherStepMessage.NotEnoughRightToCreateATeacher,
         ]);
 
-        var webClient = _factory.CreateClient();
-
-        _tgClient = await WTelegramClientFactory.CreateClient(Config);
-
-        using var locker = new AutoResetEvent(false);
-        // ReSharper disable once AccessToDisposedClosure
-        _tgClient.OnUpdates += update => TgClientOnOnUpdates(update, expectedMessagesInOrder, locker);
-
-        await SendUpdate(webClient, Telegram.Commands.CreateTeacherCommand);
-
-        locker.WaitOne();
+        SubscribeOnUpdates(expectedMessagesInOrder);
         
+        await SendUpdate(Telegram.Commands.CreateTeacherCommand);
+
         Assert.True(expectedMessagesInOrder.Count == 0);
     }
 
     [Fact, Order(2)]
     public async Task CreateTeacherTest_WhenUserIsAnAdmin_ShouldCreateATeacher()
     {
+        await InitializeAsync(_whenAdminFactory);
+        
         var expectedMessagesInOrder = new Queue<string>([
             CreateTeacherStepMessage.InputName,
             CreateTeacherStepMessage.InputLoginFromYandexCalendar,
@@ -86,51 +82,22 @@ public class CreateTeacherCommandTest : BaseCommandTest, IClassFixture<WebAppFac
             CreateTeacherStepMessage.CreateSuccessMessage(ExpectedYandexName, ExpectedYandexLogin).Replace("\r\n", "\n")
         ]);
 
-        var webClient = _whenAdminFactory.CreateClient();
+        SubscribeOnUpdates(expectedMessagesInOrder);
 
-        _tgClient = await WTelegramClientFactory.CreateClient(Config);
+        await SendUpdate(Telegram.Commands.CreateTeacherCommand);
 
-        var locker = new AutoResetEvent(false);
-        // ReSharper disable once AccessToDisposedClosure
-        _tgClient.OnUpdates += update => TgClientOnOnUpdates(update, expectedMessagesInOrder, locker);
+        await SendUpdate(ExpectedYandexName);
+        await SendUpdate(ExpectedYandexLogin);
 
-        await SendUpdate(webClient, Telegram.Commands.CreateTeacherCommand);
-
-        locker.WaitOne();
-
-        await SendUpdate(webClient, ExpectedYandexName);
-
-        locker.WaitOne();
-
-        await SendUpdate(webClient, ExpectedYandexLogin);
-
-        locker.WaitOne();
-
-        await SendUpdate(webClient, ExpectedYandexPassword);
-
-        locker.WaitOne();
+        await SendUpdate(ExpectedYandexPassword);
 
         _mock.VerifyAll();
-        
+
         Assert.True(expectedMessagesInOrder.Count == 0);
     }
 
     protected override bool IsFinalUpdateInStep(string message)
     {
         return message != DefaultStepMessage.ProcessingRequest;
-    }
-
-    public void Dispose()
-    {
-        _factory.Dispose();
-        _whenAdminFactory.Dispose();
-        _tgClient.Dispose();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await _factory.DisposeAsync();
-        await _whenAdminFactory.DisposeAsync();
-        await _tgClient.DisposeAsync();
     }
 }

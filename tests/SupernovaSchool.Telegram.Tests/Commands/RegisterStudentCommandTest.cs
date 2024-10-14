@@ -9,10 +9,9 @@ using Xunit.Extensions.Ordering;
 namespace SupernovaSchool.Telegram.Tests.Commands;
 
 [Collection("CommandsCollection"), Order(2)]
-public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppFactory>, IDisposable, IAsyncDisposable
+public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppFactory>
 {
     private readonly WebAppFactory _factory;
-    private Client _tgClient = null!;
 
     public RegisterStudentCommandTest(WebAppFactory factory)
     {
@@ -22,6 +21,8 @@ public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppF
     [Fact]
     public async Task RegisterStudentCommandTest_ShouldRegisterStudent()
     {
+        await InitializeAsync(_factory);
+
         const string expectedName = "Test name";
         const string expectedClass = "7";
 
@@ -33,23 +34,13 @@ public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppF
             RegisterStudentStepMessage.CreateSuccessMessage(expectedName, expectedClass),
         ]);
 
-        var webClient = _factory.CreateClient();
+        SubscribeOnUpdates(expectedMessagesInOrder);
 
-        _tgClient = await WTelegramClientFactory.CreateClient(Config);
+        await SendUpdate(Telegram.Commands.RegisterAsStudentCommand);
 
-        using var locker = new AutoResetEvent(false);
-        // ReSharper disable once AccessToDisposedClosure
-        _tgClient.OnUpdates += update => TgClientOnOnUpdates(update, expectedMessagesInOrder, locker);
+        await SendUpdate(expectedName);
 
-        await SendUpdate(webClient, Telegram.Commands.RegisterAsStudentCommand);
-
-        locker.WaitOne();
-
-        await SendUpdate(webClient, expectedName);
-        locker.WaitOne();
-
-        await SendUpdate(webClient, expectedClass);
-        locker.WaitOne();
+        await SendUpdate(expectedClass);
 
         Assert.True(expectedMessagesInOrder.Count == 0);
     }
@@ -59,19 +50,5 @@ public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppF
         return message is not DefaultStepMessage.ProcessingRequest && message !=
             DefaultStepMessage.CreateInitialMessage(RegisterStudentStepMessage.CommandStartMessage)
                 .Replace("\r\n", "\n");
-    }
-
-    public void Dispose()
-    {
-        _factory.Dispose();
-        _tgClient.Dispose();
-        GC.SuppressFinalize(this);
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await _factory.DisposeAsync();
-        await _tgClient.DisposeAsync();
-        GC.SuppressFinalize(this);
     }
 }
