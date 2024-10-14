@@ -35,19 +35,19 @@ public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppF
 
         _tgClient = await WTelegramClientFactory.CreateClient(Config);
 
-        using var locker = new ManualResetEventSlim();
+        using var locker = new AutoResetEvent(false);
         // ReSharper disable once AccessToDisposedClosure
         _tgClient.OnUpdates += update => TgClientOnOnUpdates(update, expectedMessagesInOrder, locker);
 
         await SendUpdate(webClient, Telegram.Commands.RegisterAsStudentCommand);
 
-        locker.Wait();
+        locker.WaitOne();
 
         await SendUpdate(webClient, expectedName);
-        locker.Wait();
+        locker.WaitOne();
 
         await SendUpdate(webClient, expectedClass);
-        locker.Wait();
+        locker.WaitOne();
     }
 
     protected override bool IsFinalUpdateInStep(string message)
@@ -60,7 +60,6 @@ public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppF
     {
         _factory.Dispose();
         _tgClient.Dispose();
-        _tgClient.OnUpdates += update => TgClientOnOnUpdates(update, null!, null!);
         GC.SuppressFinalize(this);
     }
 
@@ -68,7 +67,6 @@ public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppF
     {
         await _factory.DisposeAsync();
         await _tgClient.DisposeAsync();
-        _tgClient.OnUpdates += update => TgClientOnOnUpdates(update, null!, null!);
         GC.SuppressFinalize(this);
     }
 }

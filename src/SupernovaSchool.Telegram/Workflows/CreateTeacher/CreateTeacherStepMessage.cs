@@ -3,7 +3,7 @@ namespace SupernovaSchool.Telegram.Workflows.CreateTeacher;
 public static class CreateTeacherStepMessage
 {
     private const string SuccessMessageTemplate = """
-                                                  Учитьль успешно добавлен. Данные учтилея:
+                                                  Учитель успешно добавлен. Данные учителя:
                                                   ФИО: {0}
                                                   Логин в Яндекс.Календарь:{1}"
                                                   """;

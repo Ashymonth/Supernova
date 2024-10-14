@@ -18,18 +18,18 @@ public class StartCommandTest : BaseCommandTest, IClassFixture<WebAppFactory>
         var webClient = _fixture.CreateClient();
 
         var expectedMessage = new Queue<string>([
-            CommandText.StartCommandMessage.Replace("\r\n", "\n") // we need this because in telegram message that contains \r\n is just \n
+            CommandText.StartCommandMessage // we need this because in telegram message that contains \r\n is just \n
         ]);
 
         var tgClient = await WTelegramClientFactory.CreateClient(Config);
 
-        using var locker = new ManualResetEventSlim();
+        using var locker = new AutoResetEvent(false);
 
         // ReSharper disable once AccessToDisposedClosure
         tgClient.OnUpdates += update => TgClientOnOnUpdates(update, expectedMessage, locker);
         
         await SendUpdate(webClient, Telegram.Commands.StartCommand);
 
-        locker.Wait();
+        locker.WaitOne();
     }
 }

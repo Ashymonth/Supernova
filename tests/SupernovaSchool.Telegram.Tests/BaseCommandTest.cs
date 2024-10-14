@@ -40,9 +40,8 @@ public class BaseCommandTest
 
         return content.Length != 0 ? JsonSerializer.Deserialize<Message>(content) : null;
     }
-    
     protected Task TgClientOnOnUpdates(UpdatesBase updateEvent, Queue<string> expectedMessagesInOrder,
-        ManualResetEventSlim locker)
+        AutoResetEvent locker)
     {
         if (updateEvent.UpdateList.FirstOrDefault() is UpdateUserStatus)
         {
@@ -50,7 +49,7 @@ public class BaseCommandTest
         }
         
         if (updateEvent.UpdateList.FirstOrDefault() is not UpdateNewMessage update ||
-           update.message.Peer.ID != Config.BotChatId)
+            update.message.Peer.ID != Config.BotChatId)
         {
             return Task.CompletedTask;
         }
@@ -58,14 +57,15 @@ public class BaseCommandTest
         var expectedMessage = expectedMessagesInOrder.Dequeue();
 
         var messageText = (update.message as Message)!.message;
-        Assert.Equal(expectedMessage, messageText);
+        
+        // we need this because in telegram message that contains \r\n is just \n
+        Assert.Equal(expectedMessage.Replace("\r\n", "\n"), messageText); 
         if (!IsFinalUpdateInStep(messageText))
         {
             return Task.CompletedTask;
         }
 
         // ReSharper disable once AccessToDisposedClosure
-        locker.Reset();
         locker.Set();
         return Task.CompletedTask;
     }
