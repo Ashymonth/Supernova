@@ -24,15 +24,6 @@ public class CreateAppointmentWorkflow : IWorkflow<CreateAppointmentWorkflowData
             .LoadTeachers()
             .RequestToSelectTeacher()
             .RequestToSelectAppointmentDay()
-            .Then<LoadTeacherAvailableTimeSlotsStep>()
-            .Input(slots => slots.SelectedTeacherIndex, data => int.Parse(data.SelectedTeacherIndex!))
-            .Input(slots => slots.Teachers, data => data.Teachers)
-            .Input(slots => slots.DueDate, data => data.AppointmentDate)
-            .Output(data => data.AvailableTimeSlots, slots => slots.AvailableSlots)
-            .If(data => data.AvailableTimeSlots.Length == 0)
-            //
-            .Do(workflowBuilder =>
-                workflowBuilder.CleanupAndEndWorkflow(CreateAppointmentStepMessage.NoAvailableTimeSlots))
             .SendMessageToUser(DefaultStepMessage.ProcessingRequest)
             .Then<EnsureThatUserDosentRegisteredOnMeeting>()
             .Input(meeting => meeting.UserId, data => data.UserId)
@@ -42,6 +33,15 @@ public class CreateAppointmentWorkflow : IWorkflow<CreateAppointmentWorkflowData
                 workflowBuilder => workflowBuilder.CleanupAndEndWorkflow(CreateAppointmentStepMessage
                     .AlreadyHaveAppointmentOnSelectedDay)
             )
+            .Then<LoadTeacherAvailableTimeSlotsStep>()
+            .Input(slots => slots.SelectedTeacherIndex, data => int.Parse(data.SelectedTeacherIndex!))
+            .Input(slots => slots.Teachers, data => data.Teachers)
+            .Input(slots => slots.DueDate, data => data.AppointmentDate)
+            .Output(data => data.AvailableTimeSlots, slots => slots.AvailableSlots)
+            .If(data => data.AvailableTimeSlots.Length == 0)
+            //
+            .Do(workflowBuilder =>
+                workflowBuilder.CleanupAndEndWorkflow(CreateAppointmentStepMessage.NoAvailableTimeSlots))
             .While(data => data.GetTimeSlot() == null || !data.AvailableTimeSlots.Contains(data.GetTimeSlot()))
             .Do(builder1 =>
             {

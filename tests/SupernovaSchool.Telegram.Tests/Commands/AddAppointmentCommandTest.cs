@@ -15,7 +15,7 @@ namespace SupernovaSchool.Telegram.Tests.Commands;
 [Collection("CommandsCollection"), Order(4)]
 public class AddAppointmentCommandTest : BaseCommandTest
 {
-    [Fact]
+    [Fact, Order(1)]
     public async Task CreateAppointmentAsync_WhenStudentNotRegistered_ShouldReturnErrorMessage()
     {
         var mock = new Mock<IStudentService>();
@@ -25,7 +25,7 @@ public class AddAppointmentCommandTest : BaseCommandTest
         await InitializeAsync(userIsNotRegisteredFactory);
 
         var expectedMessagesInOrder = new Queue<string>([
-            CreateAppointmentStepMessage.ChooseTeacherFromListTemplate,
+            CreateAppointmentStepMessage.UserNotRegistered,
         ]);
 
         SubscribeOnUpdates(expectedMessagesInOrder);
@@ -37,16 +37,16 @@ public class AddAppointmentCommandTest : BaseCommandTest
         Assert.True(expectedMessagesInOrder.Count == 0);
     }
 
-    [Fact]
+    [Fact, Order(2)]
     public async Task CreateAppointmentAsync_WhenForDayNoTimeSlots_ShouldReturnErrorMessage()
     {
         const string selectedTeacherIndex = "0";
-        const string dateWithoutAvailableTimeSlots = "2024.10.14";
-        
+        var dateWithoutAvailableTimeSlots = DateTime.Parse("2024.10.14");
+
         var appointmentServiceMock = new Mock<IAppointmentService>();
         var dateTimeProviderMock = new Mock<IDateTimeProvider>();
         var studentServiceMock = new Mock<IStudentService>();
-        
+
         var factory =
             new WepAppFactoryWithTeachersWithoutAvailableTimeSlots(appointmentServiceMock, dateTimeProviderMock,
                 studentServiceMock);
@@ -59,24 +59,31 @@ public class AddAppointmentCommandTest : BaseCommandTest
             Teacher.Create("teacher 1", "login 1", Password.Create("123", passwordProtector)),
             Teacher.Create("teacher 2", "login 2", Password.Create("123", passwordProtector))
         ];
-        
+
         await SeedTeachers(factory, teachers);
-        
-        dateTimeProviderMock.Setup(provider => provider.Now).Returns(DateTime.Parse("2024.10.14"));
-        
+
+        dateTimeProviderMock.Setup(provider => provider.Now).Returns(dateWithoutAvailableTimeSlots);
+
         studentServiceMock.Setup(studentService =>
                 studentService.GetStudentAsync(It.Is<string>(userId => userId == Config.SenderId.ToString()),
                     It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Student { Id = Config.SenderId.ToString(), Name = "Test student", Class = "7" });
+
         appointmentServiceMock.Setup(service =>
                 service.FindTeacherAvailableAppointmentSlotsAsync(teachers[int.Parse(selectedTeacherIndex)].Id,
-                    DateTime.Parse(dateWithoutAvailableTimeSlots), It.IsAny<CancellationToken>()))
+                    dateWithoutAvailableTimeSlots, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        appointmentServiceMock.Setup(service => service.GetStudentAppointmentsAsync(dateWithoutAvailableTimeSlots,
+                dateWithoutAvailableTimeSlots.AddHours(23).AddMinutes(59), Config.SenderId.ToString(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
         var expectedMessagesInOrder = new Queue<string>([
             CreateAppointmentStepMessage.InitialMessage,
             CreateAppointmentStepMessage.CreateChooseTeacherMessage(teachers),
             CreateAppointmentStepMessage.SelectAppointmentDay,
+            DefaultStepMessage.ProcessingRequest,
             CreateAppointmentStepMessage.NoAvailableTimeSlots
         ]);
 
@@ -84,7 +91,61 @@ public class AddAppointmentCommandTest : BaseCommandTest
 
         await SendUpdate(Telegram.Commands.CreateAppointmentCommand);
         await SendUpdate(selectedTeacherIndex);
-        await SendUpdate(dateWithoutAvailableTimeSlots);
+        await SendUpdate(dateWithoutAvailableTimeSlots.ToShortDateString());
+
+        Assert.True(expectedMessagesInOrder.Count == 0);
+    }
+
+    [Fact, Order(3)]
+    public async Task CreateAppointmentAsync_WhenStudentHasAppouintmentOnThisDate_ShouldReturnErrorMessage()
+    {
+        const string selectedTeacherIndex = "0";
+        var selectedDate = DateTime.Parse("2024.10.14");
+
+        var appointmentServiceMock = new Mock<IAppointmentService>();
+        var dateTimeProviderMock = new Mock<IDateTimeProvider>();
+        var studentServiceMock = new Mock<IStudentService>();
+
+        var factory =
+            new WepAppFactoryWithTeachersWithoutAvailableTimeSlots(appointmentServiceMock, dateTimeProviderMock,
+                studentServiceMock);
+
+        await InitializeAsync(factory);
+
+        var passwordProtector = factory.Services.GetRequiredService<IPasswordProtector>();
+        List<Teacher> teachers =
+        [
+            Teacher.Create("teacher 1", "login 1", Password.Create("123", passwordProtector)),
+            Teacher.Create("teacher 2", "login 2", Password.Create("123", passwordProtector))
+        ];
+
+        await SeedTeachers(factory, teachers);
+
+        dateTimeProviderMock.Setup(provider => provider.Now).Returns(selectedDate);
+
+        studentServiceMock.Setup(studentService =>
+                studentService.GetStudentAsync(It.Is<string>(userId => userId == Config.SenderId.ToString()),
+                    It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Student { Id = Config.SenderId.ToString(), Name = "Test student", Class = "7" });
+
+        appointmentServiceMock.Setup(service => service.GetStudentAppointmentsAsync(selectedDate,
+                selectedDate.AddHours(23).AddMinutes(59), Config.SenderId.ToString(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<StudentAppointmentInfo>
+                { new() { DueDate = selectedDate, EventId = "test", TeacherName = "test" } });
+
+        var expectedMessagesInOrder = new Queue<string>([
+            CreateAppointmentStepMessage.InitialMessage,
+            CreateAppointmentStepMessage.CreateChooseTeacherMessage(teachers),
+            CreateAppointmentStepMessage.SelectAppointmentDay,
+            DefaultStepMessage.ProcessingRequest,
+            CreateAppointmentStepMessage.AlreadyHaveAppointmentOnSelectedDay
+        ]);
+
+        SubscribeOnUpdates(expectedMessagesInOrder);
+
+        await SendUpdate(Telegram.Commands.CreateAppointmentCommand);
+        await SendUpdate(selectedTeacherIndex);
+        await SendUpdate(selectedDate.ToShortDateString());
 
         Assert.True(expectedMessagesInOrder.Count == 0);
     }
