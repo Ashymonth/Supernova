@@ -27,7 +27,7 @@ public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppF
         const string expectedClass = "7";
 
         var expectedMessagesInOrder = new Queue<string>([
-            DefaultStepMessage.CreateInitialMessage(RegisterStudentStepMessage.CommandStartMessage),
+            RegisterStudentStepMessage.CommandStartMessage,
             RegisterStudentStepMessage.InputName,
             RegisterStudentStepMessage.InputClass,
             DefaultStepMessage.ProcessingRequest,
@@ -48,7 +48,6 @@ public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppF
     protected override bool IsFinalUpdateInStep(string message)
     {
         return message is not DefaultStepMessage.ProcessingRequest && message !=
-            DefaultStepMessage.CreateInitialMessage(RegisterStudentStepMessage.CommandStartMessage)
-                .Replace("\r\n", "\n");
+            RegisterStudentStepMessage.CommandStartMessage.Replace("\r\n", "\n");
     }
 }

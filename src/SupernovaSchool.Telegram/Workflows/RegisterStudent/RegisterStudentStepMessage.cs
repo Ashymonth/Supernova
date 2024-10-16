@@ -2,7 +2,10 @@ namespace SupernovaSchool.Telegram.Workflows.RegisterStudent;
 
 public static class RegisterStudentStepMessage
 {
-    public const string CommandStartMessage = "Для того, чтобы записаться к психологу, вам нужно указать свои данные.";
+    public static readonly string CommandStartMessage =
+        DefaultStepMessage.CreateInitialMessage(
+            "Для того, чтобы записаться к психологу, вам нужно указать свои данные.");
+    
     public const string InputName = "Введите имя";
     public const string InputClass = "Укажите ваш поток";
 

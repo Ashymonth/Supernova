@@ -1,7 +1,11 @@
+using System.Data.Common;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
+using SupernovaSchool.Data;
 using SupernovaSchool.Telegram.Tests.Fixtures;
 using SupernovaSchool.Telegram.Tests.Helpers;
 using SupernovaSchool.Telegram.Workflows;
@@ -23,7 +27,6 @@ public class CreateTeacherCommandTest : BaseCommandTest, IClassFixture<WebAppFac
     private readonly WebAppFactoryWhenUserIsNotAdmin _factory;
     private readonly WebApplicationFactory<Program> _whenAdminFactory;
     private readonly Mock<IAuthorizationResource> _mock = new();
-    private Client _tgClient = null!;
 
     public CreateTeacherCommandTest(WebAppFactoryWhenUserIsNotAdmin factory)
     {
@@ -40,14 +43,34 @@ public class CreateTeacherCommandTest : BaseCommandTest, IClassFixture<WebAppFac
                         .AddUserSecrets<BaseCommandTest>();
                 });
 
-                builder.ConfigureServices(collection =>
+                builder.ConfigureServices(services =>
                 {
-                    var service = collection.First(descriptor =>
+                    var service = services.First(descriptor =>
                         descriptor.ServiceType == typeof(IAuthorizationResource));
 
-                    collection.Remove(service);
+                    services.Remove(service);
 
-                    collection.AddSingleton<IAuthorizationResource>(_ => _mock.Object);
+                    services.AddSingleton<IAuthorizationResource>(_ => _mock.Object);
+                    
+                    var dbContextDescriptor = services.First(
+                        d => d.ServiceType ==
+                             typeof(DbContextOptions<SupernovaSchoolDbContext>));
+
+                    services.Remove(dbContextDescriptor);
+
+                    services.AddSingleton<DbConnection>(_ =>
+                    {
+                        var connection = new SqliteConnection("DataSource=:memory:");
+                        connection.Open();
+
+                        return connection;
+                    });
+
+                    services.AddDbContext<SupernovaSchoolDbContext>((container, options) =>
+                    {
+                        var connection = container.GetRequiredService<DbConnection>();
+                        options.UseSqlite(connection);
+                    });
                 });
             });
         _factory = factory;

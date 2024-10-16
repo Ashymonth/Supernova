@@ -61,7 +61,12 @@ public class BaseCommandTest : IDisposable
         Locker.WaitOne();
     }
 
-    protected Task TgClientOnOnUpdates(UpdatesBase updateEvent, Queue<string> expectedMessagesInOrder,
+    protected virtual bool IsFinalUpdateInStep(string message)
+    {
+        return true;
+    }
+    
+    private Task TgClientOnOnUpdates(UpdatesBase updateEvent, Queue<string> expectedMessagesInOrder,
         AutoResetEvent locker)
     {
         if (updateEvent.UpdateList.FirstOrDefault() is UpdateUserStatus)
@@ -89,11 +94,6 @@ public class BaseCommandTest : IDisposable
         // ReSharper disable once AccessToDisposedClosure
         locker.Set();
         return Task.CompletedTask;
-    }
-
-    protected virtual bool IsFinalUpdateInStep(string message)
-    {
-        return true;
     }
 
     public void Dispose()

@@ -20,8 +20,7 @@ public class RegisterStudentWorkflow : IWorkflow<RegisterStudentWorkflowData>
 
     public void Build(IWorkflowBuilder<RegisterStudentWorkflowData> builder)
     {
-        builder.SendMessageToUser(
-                DefaultStepMessage.CreateInitialMessage(RegisterStudentStepMessage.CommandStartMessage), true)
+        builder.SendMessageToUser(RegisterStudentStepMessage.CommandStartMessage, true)
             .SendMessageToUser(RegisterStudentStepMessage.InputName)
             .WaitForUserMessage(data => data.StudentName, message => message.Message)
             .SendMessageWithPagination(data => !AvailableClasses.Contains(data.PaginationMessage), workflowBuilder =>
