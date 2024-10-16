@@ -11,13 +11,17 @@ public static class CreateAppointmentStepMessage
                                                   Время - {2}
                                                   """;
 
+    public static readonly string InitialMessage = DefaultStepMessage.CreateInitialMessage("Следуйте указаным шагам.");
+
     public const string UserNotRegistered =
         $"Сначала вы должна зарегистрироваться с помощью команды {Commands.RegisterAsStudentCommand}";
 
     public const string ChooseTeacherFromListTemplate = """
-                                                {0}
-                                                Для записи выберите сотрудника из списка.";
-                                                """;
+                                                        Для записи выберите сотрудника из списка.
+                                                        {0}"
+                                                        """;
+
+    public const string SelectAppointmentDay = "Выберите дату для записи";
 
     public const string NoAvailableTimeSlots =
         "На выбранный день нет доступх мест для записи. Выберите другой день или другого сотрудника.";
@@ -29,8 +33,9 @@ public static class CreateAppointmentStepMessage
 
     public static string CreateChooseTeacherMessage(List<Teacher> teachers)
     {
-        var teachersList = string.Join("\n", teachers.Select((teacher, index) => $"{index}. {teacher.Name}"));
-        
+        var teachersList = string.Join("\n",
+            teachers.OrderBy(teacher => teacher.Name).Select((teacher, index) => $"{index}. {teacher.Name}"));
+
         return string.Format(ChooseTeacherFromListTemplate, teachersList);
     }
 

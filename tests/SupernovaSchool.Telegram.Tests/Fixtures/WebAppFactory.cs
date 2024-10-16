@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using SupernovaSchool.Telegram.Tests.Extensions;
 
 namespace SupernovaSchool.Telegram.Tests.Fixtures;
 
@@ -10,9 +10,7 @@ public class WebAppFactory : WebApplicationFactory<Program>
     {
         builder.ConfigureHostConfiguration(configurationBuilder =>
         {
-            configurationBuilder
-                .AddJsonFile("appsettings.json")
-                .AddUserSecrets<BaseCommandTest>();
+            configurationBuilder.AddDefaultConfiguration();
         });
         
         return base.CreateHost(builder);

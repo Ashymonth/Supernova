@@ -41,7 +41,7 @@ internal static class CreateAppointmentWorkflowExtensions
             .Output(data => data.SelectedTeacher, step => step.SelectedTeacher);
     }
 
-    public static IStepBuilder<CreateAppointmentWorkflowData, While> RequsetToSelectAppointmentDay<TStep>(
+    public static IStepBuilder<CreateAppointmentWorkflowData, While> RequestToSelectAppointmentDay<TStep>(
         this IStepBuilder<CreateAppointmentWorkflowData, TStep> builder) where TStep : IStepBody
     {
         return builder.Then<LoadAvailableMeetingDays>()
@@ -50,7 +50,7 @@ internal static class CreateAppointmentWorkflowExtensions
                 workflowBuilder =>
                 {
                     workflowBuilder
-                        .SendVariantsPage("Выберите дату для записи", data => data.AvailableMeetingDays
+                        .SendVariantsPage(CreateAppointmentStepMessage.SelectAppointmentDay, data => data.AvailableMeetingDays
                             .Select(slot => slot.ToShortDateString())
                             .ToArray())
                         .WaitForUserMessage(data => data.PaginationMessage, message => message.Message);

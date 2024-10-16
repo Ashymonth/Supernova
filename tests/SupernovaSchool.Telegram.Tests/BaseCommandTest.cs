@@ -7,12 +7,14 @@ using SupernovaSchool.Telegram.Tests.Options;
 using SupernovaSchool.Telegram.Workflows;
 using SupernovaSchool.Telegram.Workflows.RegisterStudent;
 using Telegram.Bot;
+using Telegram.Bot.Types;
 using TL;
 using WTelegram;
+using Message = TL.Message;
 using TgUpdate = Telegram.Bot.Types.Update;
 using TgMessage = Telegram.Bot.Types.Message;
 using TgUser = Telegram.Bot.Types.User;
- 
+
 
 namespace SupernovaSchool.Telegram.Tests;
 
@@ -29,8 +31,9 @@ public class BaseCommandTest : IDisposable
 
         Config = config;
     }
+
     protected AutoResetEvent Locker { get; } = new(false);
-    
+
     protected Client WTelegramClient { get; private set; } = null!;
 
     protected WTelegramConfig Config { get; }
@@ -52,11 +55,12 @@ public class BaseCommandTest : IDisposable
     {
         using var response = await AppClient.PostAsJsonAsync("/updates", new TgUpdate
         {
-            Message = new TgMessage { Text = message, From = new TgUser { Id = Config.SenderId } }
-        });
+            Message = new TgMessage { Text = message, From = new TgUser { FirstName = "Test",Id = Config.SenderId } }
+        }, new JsonSerializerOptions(JsonSerializerDefaults.Web){Converters = {  }});
 
         Locker.WaitOne();
     }
+
     protected Task TgClientOnOnUpdates(UpdatesBase updateEvent, Queue<string> expectedMessagesInOrder,
         AutoResetEvent locker)
     {
@@ -64,19 +68,19 @@ public class BaseCommandTest : IDisposable
         {
             return Task.CompletedTask;
         }
-        
+
         if (updateEvent.UpdateList.FirstOrDefault() is not UpdateNewMessage update ||
             update.message.Peer.ID != Config.BotChatId)
         {
             return Task.CompletedTask;
         }
-        
+
         var expectedMessage = expectedMessagesInOrder.Dequeue();
 
         var messageText = (update.message as Message)!.message;
-        
+
         // we need this because in telegram message that contains \r\n is just \n
-        Assert.Equal(expectedMessage.Replace("\r\n", "\n"), messageText); 
+        Assert.Equal(expectedMessage.Replace("\r\n", "\n"), messageText);
         if (!IsFinalUpdateInStep(messageText))
         {
             return Task.CompletedTask;

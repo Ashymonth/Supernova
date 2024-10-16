@@ -20,9 +20,10 @@ public class CreateAppointmentWorkflow : IWorkflow<CreateAppointmentWorkflowData
             .EnsureThatStudentRegistered()
             .If(data => !data.IsStudentRegistered).Do(workflowBuilder =>
                 workflowBuilder.CleanupAndEndWorkflow(CreateAppointmentStepMessage.UserNotRegistered))
+            .SendMessageToUser(CreateAppointmentStepMessage.InitialMessage)
             .LoadTeachers()
             .RequestToSelectTeacher()
-            .RequsetToSelectAppointmentDay()
+            .RequestToSelectAppointmentDay()
             .Then<LoadTeacherAvailableTimeSlotsStep>()
             .Input(slots => slots.SelectedTeacherIndex, data => int.Parse(data.SelectedTeacherIndex!))
             .Input(slots => slots.Teachers, data => data.Teachers)

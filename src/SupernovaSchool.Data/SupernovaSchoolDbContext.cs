@@ -5,7 +5,7 @@ namespace SupernovaSchool.Data;
 
 public class SupernovaSchoolDbContext : DbContext
 {
-    public SupernovaSchoolDbContext(DbContextOptions dbContextOptions) : base(dbContextOptions)
+    public SupernovaSchoolDbContext(DbContextOptions<SupernovaSchoolDbContext> dbContextOptions) : base(dbContextOptions)
     {
     }
 
