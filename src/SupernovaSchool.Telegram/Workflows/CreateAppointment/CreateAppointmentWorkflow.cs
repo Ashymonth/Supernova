@@ -1,6 +1,7 @@
 using SupernovaSchool.Telegram.Extensions;
 using SupernovaSchool.Telegram.Extensions.Steps;
 using SupernovaSchool.Telegram.Steps;
+using SupernovaSchool.Telegram.Steps.Common;
 using SupernovaSchool.Telegram.Workflows.CreateAppointment.Extensions;
 using SupernovaSchool.Telegram.Workflows.CreateAppointment.Steps;
 using WorkflowCore.Interface;
@@ -16,19 +17,15 @@ public class CreateAppointmentWorkflow : IWorkflow<CreateAppointmentWorkflowData
     public void Build(IWorkflowBuilder<CreateAppointmentWorkflowData> builder)
     {
         builder
-            .Then<EnsureThatStudentRegisteredStep>()
-            .Input(step => step.UserId, data => data.UserId)
-            .Output(data => data.IsStudentRegistered, step => step.IsStudentRegistered)
+            .EnsureThatStudentRegistered()
             .If(data => !data.IsStudentRegistered).Do(workflowBuilder =>
                 workflowBuilder.CleanupAndEndWorkflow(CreateAppointmentStepMessage.UserNotRegistered))
-            .SendMessageToUser(
-                DefaultStepMessage.CreateInitialMessage(CreateAppointmentStepMessage.ChooseTeacherFromList))
-            .Then<SendTeacherListStep>()
-            .Input(step => step.UserId, data => data.UserId)
-            .WaitForUserInlineData(data => data.TeacherId, o => Guid.Parse((o as UserMessage)!.Message))
-            .SendAvailableMetingDates()
-            .Then<SendAvailableTimeSlotsStep>()
-            .Input(slots => slots.TeacherId, data => data.TeacherId)
+            .LoadTeachers()
+            .RequestToSelectTeacher()
+            .RequsetToSelectAppointmentDay()
+            .Then<LoadTeacherAvailableTimeSlotsStep>()
+            .Input(slots => slots.SelectedTeacherIndex, data => int.Parse(data.SelectedTeacherIndex!))
+            .Input(slots => slots.Teachers, data => data.Teachers)
             .Input(slots => slots.DueDate, data => data.AppointmentDate)
             .Output(data => data.AvailableTimeSlots, slots => slots.AvailableSlots)
             .If(data => data.AvailableTimeSlots.Length == 0)
@@ -56,10 +53,10 @@ public class CreateAppointmentWorkflow : IWorkflow<CreateAppointmentWorkflowData
             .SendMessageToUser(DefaultStepMessage.ProcessingRequest)
             .Then<CreateMeetingStep>()
             .Input(appointment => appointment.UserId, data => data.UserId)
-            .Input(appointment => appointment.TeacherId, data => data.TeacherId)
+            .Input(appointment => appointment.TeacherId, data => data.SelectedTeacher.Id)
             .Input(appointment => appointment.AppointmentSlot, data => data.GetTimeSlot())
             .Input(appointment => appointment.AppointmentDate, data => data.AppointmentDate)
-            .CleanupAndEndWorkflow(data => CreateAppointmentStepMessage.CreateSuccessMessage(data.TeacherId.ToString(),
+            .CleanupAndEndWorkflow(data => CreateAppointmentStepMessage.CreateSuccessMessage(data.SelectedTeacher.Name,
                 data.AppointmentDate.ToShortDateString(), data.PaginationMessage));
     }
 }

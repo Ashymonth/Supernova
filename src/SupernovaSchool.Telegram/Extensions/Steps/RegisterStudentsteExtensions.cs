@@ -8,8 +8,8 @@ public static class RegisterStudentStepExtensions
 {
     public static void AddRegisterStudentSteps(this IServiceCollection services)
     {
-        services.AddTransient<SendTeacherListStep>();
-        services.AddTransient<SendAvailableTimeSlotsStep>();
+        services.AddTransient<LoadTeachersStep>();
+        services.AddTransient<LoadTeacherAvailableTimeSlotsStep>();
         services.AddTransient<RegisterStudentStep>();
 
     }

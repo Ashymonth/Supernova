@@ -1,3 +1,5 @@
+using SupernovaSchool.Models;
+
 namespace SupernovaSchool.Telegram.Workflows.CreateAppointment;
 
 public static class CreateAppointmentStepMessage
@@ -12,7 +14,10 @@ public static class CreateAppointmentStepMessage
     public const string UserNotRegistered =
         $"Сначала вы должна зарегистрироваться с помощью команды {Commands.RegisterAsStudentCommand}";
 
-    public const string ChooseTeacherFromList = "Для записи выберите сотрудника из списка.";
+    public const string ChooseTeacherFromListTemplate = """
+                                                {0}
+                                                Для записи выберите сотрудника из списка.";
+                                                """;
 
     public const string NoAvailableTimeSlots =
         "На выбранный день нет доступх мест для записи. Выберите другой день или другого сотрудника.";
@@ -21,6 +26,13 @@ public static class CreateAppointmentStepMessage
         "У вас уже есть запись на этот день. На 1 день можно записать не больше 1 раза";
 
     public const string SelectTimeSlot = "Выберите время для записи.";
+
+    public static string CreateChooseTeacherMessage(List<Teacher> teachers)
+    {
+        var teachersList = string.Join("\n", teachers.Select((teacher, index) => $"{index}. {teacher.Name}"));
+        
+        return string.Format(ChooseTeacherFromListTemplate, teachersList);
+    }
 
     public static string CreateSuccessMessage(string teacherName, string day, string time) =>
         string.Format(SuccessMessageTemplate, teacherName, day, time);

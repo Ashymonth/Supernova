@@ -7,12 +7,12 @@ using WorkflowCore.Models;
 
 namespace SupernovaSchool.Telegram.Workflows.CreateAppointment.Steps;
 
-public class SendTeacherListStep : IStepBody
+public class LoadTeachersStep : IStepBody
 {
     private readonly IRepository<Teacher> _teacherRepository;
     private readonly ITelegramBotClient _telegramBotClient;
 
-    public SendTeacherListStep(IRepository<Teacher> teacherRepository, ITelegramBotClient telegramBotClient)
+    public LoadTeachersStep(IRepository<Teacher> teacherRepository, ITelegramBotClient telegramBotClient)
     {
         _teacherRepository = teacherRepository;
         _telegramBotClient = telegramBotClient;
@@ -20,15 +20,17 @@ public class SendTeacherListStep : IStepBody
 
     public string UserId { get; set; } = null!;
 
+    public List<Teacher> Teachers { get; set; }
+
     public async Task<ExecutionResult> RunAsync(IStepExecutionContext context)
     {
-        var teachers = await _teacherRepository.ListAsync();
+        Teachers = await _teacherRepository.ListAsync();
 
-        var buttons = teachers.Select(teacher =>
-            InlineKeyboardButton.WithCallbackData(teacher.Name, teacher.Id.ToString()));
-
-        await _telegramBotClient.SendTextMessageAsync(UserId, "Список сотрудников",
-            replyMarkup: new InlineKeyboardMarkup(buttons), cancellationToken: context.CancellationToken);
+        // var buttons = teachers.Select(teacher =>
+        //     InlineKeyboardButton.WithCallbackData(teacher.Name, teacher.Id.ToString()));
+        //
+        // await _telegramBotClient.SendTextMessageAsync(UserId, "Список сотрудников",
+        //     replyMarkup: new InlineKeyboardMarkup(buttons), cancellationToken: context.CancellationToken);
 
         return ExecutionResult.Next();
     }

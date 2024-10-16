@@ -1,7 +1,9 @@
 using System.Globalization;
+using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry.Metrics;
 using Serilog;
+using Serilog.Debugging;
 using SupernovaSchool;
 using SupernovaSchool.Abstractions;
 using SupernovaSchool.Abstractions.Repositories;
@@ -37,10 +39,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 try
 {
-    Serilog.Debugging.SelfLog.Enable(Console.WriteLine);
-    builder.Services.AddControllers();
+    SelfLog.Enable(Console.WriteLine);
 
-    builder.Services.ConfigureTelegramBot<Microsoft.AspNetCore.Http.Json.JsonOptions>(opt => opt.SerializerOptions);
+    builder.Services.AddControllers();
+    builder.Services.ConfigureTelegramBot<JsonOptions>(options => options.SerializerOptions);
+
     builder.Host.UseSerilog((_, configuration) => configuration.ReadFrom.Configuration(builder.Configuration));
 
     builder.AddServiceDefaults();
@@ -78,7 +81,6 @@ try
     builder.Services.AddTransient<UpdateHandler>();
 
     builder.Services.AddMemoryCache();
-
     builder.Services.AddTelegramBot(builder.Configuration.GetValue<string>("Bot:Token")!);
 
     builder.Services.YandexCalendarClient();
@@ -106,8 +108,6 @@ try
 
     app.UseHttpsRedirection();
 
-    app.MapControllers();
-
     app.UseOpenTelemetryPrometheusScrapingEndpoint("metrics");
 
     app.MapDefaultEndpoints();
@@ -127,7 +127,7 @@ try
             allowedUpdates: [UpdateType.Message, UpdateType.CallbackQuery], dropPendingUpdates: true);
     }
 
-    var workflow = app.Services.GetRequiredService<IWorkflowHost>();
+    var workflow = app.Services.GetRequiredService<IWorkflowHost>();    
 
     workflow.RegisterWorkflow<CreateAppointmentWorkflow, CreateAppointmentWorkflowData>();
     workflow.RegisterWorkflow<RegisterStudentWorkflow, RegisterStudentWorkflowData>();
