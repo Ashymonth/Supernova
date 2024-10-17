@@ -1,16 +1,8 @@
-using System.Data.Common;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Data.Sqlite;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using SupernovaSchool.Data;
 using SupernovaSchool.Telegram.Tests.Fixtures;
-using SupernovaSchool.Telegram.Tests.Helpers;
 using SupernovaSchool.Telegram.Workflows;
 using SupernovaSchool.Telegram.Workflows.CreateTeacher;
-using WTelegram;
 using Xunit.Extensions.Ordering;
 using YandexCalendar.Net;
 using YandexCalendar.Net.Models;
@@ -18,68 +10,21 @@ using YandexCalendar.Net.Models;
 namespace SupernovaSchool.Telegram.Tests.Commands;
 
 [Collection("CommandsCollection"), Order(3)]
-public class CreateTeacherCommandTest : BaseCommandTest, IClassFixture<WebAppFactoryWhenUserIsNotAdmin>
+public class CreateTeacherCommandTest : BaseCommandTest
 {
     private const string ExpectedYandexName = "Test name";
     private const string ExpectedYandexLogin = "Test login";
     private const string ExpectedYandexPassword = "Test password";
-
-    private readonly WebAppFactoryWhenUserIsNotAdmin _factory;
-    private readonly WebApplicationFactory<Program> _whenAdminFactory;
-    private readonly Mock<IAuthorizationResource> _mock = new();
-
-    public CreateTeacherCommandTest(WebAppFactoryWhenUserIsNotAdmin factory)
-    {
-        _mock.Setup(resource => resource.AuthorizeAsync(It.Is<UserCredentials>(credentials =>
-            credentials.UserName == ExpectedYandexLogin &&
-            credentials.Password == ExpectedYandexPassword), It.IsAny<CancellationToken>())).ReturnsAsync(true);
-
-        _whenAdminFactory = new WebApplicationFactory<Program>()
-            .WithWebHostBuilder(builder =>
-            {
-                builder.ConfigureAppConfiguration((context, configurationBuilder) =>
-                {
-                    configurationBuilder.AddJsonFile("appsettings.json")
-                        .AddUserSecrets<BaseCommandTest>();
-                });
-
-                builder.ConfigureServices(services =>
-                {
-                    var service = services.First(descriptor =>
-                        descriptor.ServiceType == typeof(IAuthorizationResource));
-
-                    services.Remove(service);
-
-                    services.AddSingleton<IAuthorizationResource>(_ => _mock.Object);
-                    
-                    var dbContextDescriptor = services.First(
-                        d => d.ServiceType ==
-                             typeof(DbContextOptions<SupernovaSchoolDbContext>));
-
-                    services.Remove(dbContextDescriptor);
-
-                    services.AddSingleton<DbConnection>(_ =>
-                    {
-                        var connection = new SqliteConnection("DataSource=:memory:");
-                        connection.Open();
-
-                        return connection;
-                    });
-
-                    services.AddDbContext<SupernovaSchoolDbContext>((container, options) =>
-                    {
-                        var connection = container.GetRequiredService<DbConnection>();
-                        options.UseSqlite(connection);
-                    });
-                });
-            });
-        _factory = factory;
-    }
+    
+    private readonly Mock<IAuthorizationResource> _authorizationResourceMock = new();
 
     [Fact, Order(1)]
     public async Task CreateTeacherTest_WhenUserIsNotAnAdmin_ReturnErrorMessage()
     {
-        await InitializeAsync(_factory);
+        var webApp = new WebAppFactoryBuilder()
+            .WithAdditionalConfiguration(builder => builder.AddJsonFile("appsettings-without-admins.json"));
+        
+        await InitializeAsync(webApp);
         
         var expectedMessagesInOrder = new Queue<string>([
             CreateTeacherStepMessage.NotEnoughRightToCreateATeacher,
@@ -95,7 +40,14 @@ public class CreateTeacherCommandTest : BaseCommandTest, IClassFixture<WebAppFac
     [Fact, Order(2)]
     public async Task CreateTeacherTest_WhenUserIsAnAdmin_ShouldCreateATeacher()
     {
-        await InitializeAsync(_whenAdminFactory);
+        var webApp = new WebAppFactoryBuilder()
+            .WithReplacedService(_authorizationResourceMock.Object);
+        
+        _authorizationResourceMock.Setup(resource => resource.AuthorizeAsync(It.Is<UserCredentials>(credentials =>
+            credentials.UserName == ExpectedYandexLogin &&
+            credentials.Password == ExpectedYandexPassword), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        
+        await InitializeAsync(webApp);
         
         var expectedMessagesInOrder = new Queue<string>([
             CreateTeacherStepMessage.InputName,
@@ -114,7 +66,7 @@ public class CreateTeacherCommandTest : BaseCommandTest, IClassFixture<WebAppFac
 
         await SendUpdate(ExpectedYandexPassword);
 
-        _mock.VerifyAll();
+        _authorizationResourceMock.VerifyAll();
 
         Assert.True(expectedMessagesInOrder.Count == 0);
     }

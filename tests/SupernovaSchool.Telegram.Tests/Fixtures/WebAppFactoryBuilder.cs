@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SupernovaSchool.Data;
 using SupernovaSchool.Models;
@@ -10,6 +11,7 @@ public class WebAppFactoryBuilder : WebAppFactory
     private Student? _student;
     private Func<IServiceProvider, List<Teacher>>? _teachers;
     private readonly Dictionary<Type, object> _replacedServices = [];
+    private readonly List<Func<IConfigurationBuilder, IConfigurationBuilder>> _additionalConfigurations = [];
 
     public WebAppFactoryBuilder WithStudent(Student student)
     {
@@ -17,8 +19,9 @@ public class WebAppFactoryBuilder : WebAppFactory
         return this;
     }
 
-    public WebAppFactoryBuilder WithAdditionalConfiguration()
+    public WebAppFactoryBuilder WithAdditionalConfiguration(Func<IConfigurationBuilder, IConfigurationBuilder> func)
     {
+        _additionalConfigurations.Add(func);
         return this;
     }
 
@@ -42,6 +45,14 @@ public class WebAppFactoryBuilder : WebAppFactory
         }
 
         base.ConfigureServices(services);
+    }
+
+    protected override void ConfigureAppConfiguration(IConfigurationBuilder configurationBuilder)
+    {
+        foreach (var additionalConfiguration in _additionalConfigurations)
+        {
+            additionalConfiguration(configurationBuilder);
+        }
     }
 
     protected override void SeedData(IServiceProvider provider, SupernovaSchoolDbContext dbContext)
