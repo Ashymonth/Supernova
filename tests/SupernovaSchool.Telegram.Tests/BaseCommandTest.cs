@@ -4,10 +4,6 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using SupernovaSchool.Telegram.Tests.Helpers;
 using SupernovaSchool.Telegram.Tests.Options;
-using SupernovaSchool.Telegram.Workflows;
-using SupernovaSchool.Telegram.Workflows.RegisterStudent;
-using Telegram.Bot;
-using Telegram.Bot.Types;
 using TL;
 using WTelegram;
 using Message = TL.Message;
@@ -32,13 +28,13 @@ public class BaseCommandTest : IDisposable
         Config = config;
     }
 
-    protected AutoResetEvent Locker { get; } = new(false);
+    private AutoResetEvent Locker { get; } = new(false);
 
-    protected Client WTelegramClient { get; private set; } = null!;
+    private Client WTelegramClient { get; set; } = null!;
 
+    private HttpClient AppClient { get; set; } = null!;
+    
     protected WTelegramConfig Config { get; }
-
-    protected HttpClient AppClient { get; private set; } = null!;
 
     protected async Task InitializeAsync(WebApplicationFactory<Program> applicationFactory)
     {
@@ -101,5 +97,6 @@ public class BaseCommandTest : IDisposable
         Locker.Dispose();
         WTelegramClient.Dispose();
         AppClient.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

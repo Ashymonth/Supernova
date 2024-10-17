@@ -2,7 +2,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using SupernovaSchool.Abstractions;
 using SupernovaSchool.Abstractions.Security;
-using SupernovaSchool.Data;
 using SupernovaSchool.Models;
 using SupernovaSchool.Telegram.Tests.Fixtures;
 using SupernovaSchool.Telegram.Workflows;
@@ -14,12 +13,13 @@ namespace SupernovaSchool.Telegram.Tests.Commands;
 [Collection("CommandsCollection"), Order(4)]
 public class AddAppointmentCommandTest : BaseCommandTest
 {
+    private readonly Mock<IDateTimeProvider> _dateTimeProviderMock = new();
+    private readonly Mock<IAppointmentService> _appointmentServiceMock = new();
+
     [Fact, Order(1)]
     public async Task CreateAppointmentAsync_WhenStudentNotRegistered_ShouldReturnErrorMessage()
     {
-        var mock = new Mock<IStudentService>();
-
-        var userIsNotRegisteredFactory = new WebAppFactoryWhenUserIsNotRegistered(mock);
+        var userIsNotRegisteredFactory = new WebAppFactory();
 
         await InitializeAsync(userIsNotRegisteredFactory);
 
@@ -31,114 +31,85 @@ public class AddAppointmentCommandTest : BaseCommandTest
 
         await SendUpdate(Telegram.Commands.CreateAppointmentCommand);
 
-        mock.VerifyAll();
-
         Assert.True(expectedMessagesInOrder.Count == 0);
     }
 
     [Fact, Order(2)]
     public async Task CreateAppointmentAsync_WhenForDayNoTimeSlots_ShouldReturnErrorMessage()
     {
-        const string selectedTeacherIndex = "0";
-        var dateWithoutAvailableTimeSlots = DateTime.Parse("2024.10.14");
+        var selectedDate = DateTime.Parse("2024.10.14");
 
-        var appointmentServiceMock = new Mock<IAppointmentService>();
-        var dateTimeProviderMock = new Mock<IDateTimeProvider>();
-        var studentServiceMock = new Mock<IStudentService>();
+        var teachers = new List<Teacher>();
 
-        var factory =
-            new WepAppFactoryWithTeachersWithoutAvailableTimeSlots(appointmentServiceMock, dateTimeProviderMock,
-                studentServiceMock);
+        var webApp = new WebAppFactoryBuilder()
+            .WithReplacedService(_appointmentServiceMock.Object)
+            .WithReplacedService(_dateTimeProviderMock.Object)
+            .WithStudent(new Student { Id = Config.SenderId.ToString(), Name = "Test student", Class = "7" })
+            .WithTeachers(provider =>
+            {
+                var passwordProtector = provider.GetRequiredService<IPasswordProtector>();
+                teachers.AddRange([
+                    Teacher.Create("teacher 1", "login 1", Password.Create("123", passwordProtector)),
+                    Teacher.Create("teacher 2", "login 2", Password.Create("123", passwordProtector))
+                ]);
 
-        await InitializeAsync(factory);
+                return teachers;
+            });
 
-        var passwordProtector = factory.Services.GetRequiredService<IPasswordProtector>();
-        List<Teacher> teachers =
-        [
-            Teacher.Create("teacher 1", "login 1", Password.Create("123", passwordProtector)),
-            Teacher.Create("teacher 2", "login 2", Password.Create("123", passwordProtector))
-        ];
+        await InitializeAsync(webApp);
 
-        await SeedTeachers(factory, teachers);
-
-        dateTimeProviderMock.Setup(provider => provider.Now).Returns(dateWithoutAvailableTimeSlots);
-
-        studentServiceMock.Setup(studentService =>
-                studentService.GetStudentAsync(It.Is<string>(userId => userId == Config.SenderId.ToString()),
+        _appointmentServiceMock.Setup(service =>
+                service.FindTeacherAvailableAppointmentSlotsAsync(teachers[0].Id, selectedDate,
                     It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Student { Id = Config.SenderId.ToString(), Name = "Test student", Class = "7" });
-
-        appointmentServiceMock.Setup(service =>
-                service.FindTeacherAvailableAppointmentSlotsAsync(teachers[int.Parse(selectedTeacherIndex)].Id,
-                    dateWithoutAvailableTimeSlots, It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
-        appointmentServiceMock.Setup(service => service.GetStudentAppointmentsAsync(dateWithoutAvailableTimeSlots,
-                dateWithoutAvailableTimeSlots.AddHours(23).AddMinutes(59), Config.SenderId.ToString(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync([]);
+        SetupAppointment(selectedDate, []);
 
-        var expectedMessagesInOrder = new Queue<string>([
-            CreateAppointmentStepMessage.InitialMessage,
-            CreateAppointmentStepMessage.CreateChooseTeacherMessage(teachers),
-            CreateAppointmentStepMessage.SelectAppointmentDay,
-            DefaultStepMessage.ProcessingRequest,
-            CreateAppointmentStepMessage.NoAvailableTimeSlots
-        ]);
-
-        SubscribeOnUpdates(expectedMessagesInOrder);
-
-        await SendUpdate(Telegram.Commands.CreateAppointmentCommand);
-        await SendUpdate(selectedTeacherIndex);
-        await SendUpdate(dateWithoutAvailableTimeSlots.ToShortDateString());
-
-        Assert.True(expectedMessagesInOrder.Count == 0);
+        await AssertThatErrorMessageWillBeSend(teachers, CreateAppointmentStepMessage.NoAvailableTimeSlots, selectedDate);
     }
 
     [Fact, Order(3)]
-    public async Task CreateAppointmentAsync_WhenStudentHasAppouintmentOnThisDate_ShouldReturnErrorMessage()
+    public async Task CreateAppointmentAsync_WhenStudentHasAppointmentOnThisDate_ShouldReturnErrorMessage()
     {
-        const string selectedTeacherIndex = "0";
         var selectedDate = DateTime.Parse("2024.10.14");
 
-        var appointmentServiceMock = new Mock<IAppointmentService>();
-        var dateTimeProviderMock = new Mock<IDateTimeProvider>();
-        var studentServiceMock = new Mock<IStudentService>();
+        var teachers = new List<Teacher>();
 
-        var factory =
-            new WepAppFactoryWithTeachersWithoutAvailableTimeSlots(appointmentServiceMock, dateTimeProviderMock,
-                studentServiceMock);
+        var webApp = new WebAppFactoryBuilder()
+            .WithReplacedService(_appointmentServiceMock.Object)
+            .WithReplacedService(_dateTimeProviderMock.Object)
+            .WithStudent(new Student { Id = Config.SenderId.ToString(), Name = "Test student", Class = "7" })
+            .WithTeachers(provider =>
+            {
+                var passwordProtector = provider.GetRequiredService<IPasswordProtector>();
+                teachers.AddRange([
+                    Teacher.Create("teacher 1", "login 1", Password.Create("123", passwordProtector)),
+                    Teacher.Create("teacher 2", "login 2", Password.Create("123", passwordProtector))
+                ]);
 
-        await InitializeAsync(factory);
+                return teachers;
+            });
 
-        var passwordProtector = factory.Services.GetRequiredService<IPasswordProtector>();
-        List<Teacher> teachers =
-        [
-            Teacher.Create("teacher 1", "login 1", Password.Create("123", passwordProtector)),
-            Teacher.Create("teacher 2", "login 2", Password.Create("123", passwordProtector))
-        ];
+        SetupAppointment(selectedDate,
+            [new StudentAppointmentInfo { DueDate = selectedDate, EventId = "test", TeacherName = "test" }]);
 
-        await SeedTeachers(factory, teachers);
+        await InitializeAsync(webApp);
 
-        dateTimeProviderMock.Setup(provider => provider.Now).Returns(selectedDate);
+        await AssertThatErrorMessageWillBeSend(teachers, CreateAppointmentStepMessage.AlreadyHaveAppointmentOnSelectedDay, selectedDate);
+    }
 
-        studentServiceMock.Setup(studentService =>
-                studentService.GetStudentAsync(It.Is<string>(userId => userId == Config.SenderId.ToString()),
-                    It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Student { Id = Config.SenderId.ToString(), Name = "Test student", Class = "7" });
-
-        appointmentServiceMock.Setup(service => service.GetStudentAppointmentsAsync(selectedDate,
-                selectedDate.AddHours(23).AddMinutes(59), Config.SenderId.ToString(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<StudentAppointmentInfo>
-                { new() { DueDate = selectedDate, EventId = "test", TeacherName = "test" } });
-
+    private async Task AssertThatErrorMessageWillBeSend(List<Teacher> teachers, string errorMessage, DateTime selectedDate)
+    {
         var expectedMessagesInOrder = new Queue<string>([
             CreateAppointmentStepMessage.InitialMessage,
             CreateAppointmentStepMessage.CreateChooseTeacherMessage(teachers),
             CreateAppointmentStepMessage.SelectAppointmentDay,
             DefaultStepMessage.ProcessingRequest,
-            CreateAppointmentStepMessage.AlreadyHaveAppointmentOnSelectedDay
+            errorMessage
         ]);
+
+        const string selectedTeacherIndex = "0";
+        _dateTimeProviderMock.Setup(provider => provider.Now).Returns(selectedDate);
 
         SubscribeOnUpdates(expectedMessagesInOrder);
 
@@ -155,13 +126,10 @@ public class AddAppointmentCommandTest : BaseCommandTest
                message != DefaultStepMessage.ProcessingRequest;
     }
 
-    private static async Task SeedTeachers(WepAppFactoryWithTeachersWithoutAvailableTimeSlots factory,
-        List<Teacher> teachers)
+    private void SetupAppointment(DateTime selectedDate, List<StudentAppointmentInfo> appointmentInfos)
     {
-        using var scope = factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<SupernovaSchoolDbContext>();
-
-        await db.Teachers.AddRangeAsync(teachers);
-        await db.SaveChangesAsync();
+        _appointmentServiceMock.Setup(service => service.GetStudentAppointmentsAsync(selectedDate,
+                selectedDate.AddHours(23).AddMinutes(59), Config.SenderId.ToString(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(appointmentInfos);
     }
 }
