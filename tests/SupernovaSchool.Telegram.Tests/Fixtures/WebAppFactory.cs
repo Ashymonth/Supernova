@@ -13,7 +13,6 @@ namespace SupernovaSchool.Telegram.Tests.Fixtures;
 
 public class WebAppFactory : WebApplicationFactory<Program>
 {
-    
     protected override IHost CreateHost(IHostBuilder builder)
     {
         builder.ConfigureHostConfiguration(configurationBuilder =>
@@ -47,9 +46,7 @@ public class WebAppFactory : WebApplicationFactory<Program>
         var db = scope.ServiceProvider.GetRequiredService<SupernovaSchoolDbContext>();
         db.Database.EnsureDeleted();
         db.Database.EnsureCreated();
-
         
-
         SeedData(scope.ServiceProvider, db);
 
         db.SaveChanges();
