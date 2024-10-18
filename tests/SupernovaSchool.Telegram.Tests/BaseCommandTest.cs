@@ -16,6 +16,8 @@ namespace SupernovaSchool.Telegram.Tests;
 
 public class BaseCommandTest : IDisposable
 {
+    private Exception? _capturedException;  // To capture exceptions in the event handler
+    
     protected BaseCommandTest()
     {
         var configuration = new ConfigurationBuilder()
@@ -49,6 +51,8 @@ public class BaseCommandTest : IDisposable
 
     protected async Task SendUpdate(string message)
     {
+        Assert.Null(_capturedException);
+        
         using var response = await AppClient.PostAsJsonAsync("/updates", new TgUpdate
         {
             Message = new TgMessage { Text = message, From = new TgUser { FirstName = "Test",Id = Config.SenderId } }
@@ -62,33 +66,40 @@ public class BaseCommandTest : IDisposable
         return true;
     }
     
-    private Task TgClientOnOnUpdates(UpdatesBase updateEvent, Queue<string> expectedMessagesInOrder,
-        AutoResetEvent locker)
+    private Task TgClientOnOnUpdates(UpdatesBase updateEvent, Queue<string> expectedMessagesInOrder, AutoResetEvent locker)
     {
-        if (updateEvent.UpdateList.FirstOrDefault() is UpdateUserStatus)
+        try
         {
-            return Task.CompletedTask;
+            if (updateEvent.UpdateList.FirstOrDefault() is UpdateUserStatus)
+            {
+                return Task.CompletedTask;
+            }
+
+            if (updateEvent.UpdateList.FirstOrDefault() is not UpdateNewMessage update ||
+                update.message.Peer.ID != Config.BotChatId)
+            {
+                return Task.CompletedTask;
+            }
+
+            var expectedMessage = expectedMessagesInOrder.Dequeue();
+            var messageText = (update.message as Message)!.message;
+
+            // Handle line-ending differences in Telegram messages
+            Assert.Equal(expectedMessage.Replace("\r\n", "\n"), messageText);
+
+            if (!IsFinalUpdateInStep(messageText))
+            {
+                return Task.CompletedTask;
+            }
+
+            locker.Set();  // Signal the event is processed
+        }
+        catch (Exception ex)
+        {
+            _capturedException = ex;  // Capture exception
+            locker.Set();  // Ensure the test does not the app froze
         }
 
-        if (updateEvent.UpdateList.FirstOrDefault() is not UpdateNewMessage update ||
-            update.message.Peer.ID != Config.BotChatId)
-        {
-            return Task.CompletedTask;
-        }
-
-        var expectedMessage = expectedMessagesInOrder.Dequeue();
-
-        var messageText = (update.message as Message)!.message;
-
-        // we need this because in telegram message that contains \r\n is just \n
-        Assert.Equal(expectedMessage.Replace("\r\n", "\n"), messageText);
-        if (!IsFinalUpdateInStep(messageText))
-        {
-            return Task.CompletedTask;
-        }
-
-        // ReSharper disable once AccessToDisposedClosure
-        locker.Set();
         return Task.CompletedTask;
     }
 
