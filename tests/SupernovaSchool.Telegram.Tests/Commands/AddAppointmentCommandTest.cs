@@ -1,8 +1,9 @@
-using Ical.Net.CalendarComponents;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using SupernovaSchool.Abstractions;
 using SupernovaSchool.Abstractions.Security;
+using SupernovaSchool.Data;
 using SupernovaSchool.Models;
 using SupernovaSchool.Telegram.Tests.Fixtures;
 using SupernovaSchool.Telegram.Workflows;
@@ -19,12 +20,37 @@ public class AddAppointmentCommandTest : BaseCommandTest
     private readonly Mock<IAppointmentService> _appointmentServiceMock = new();
     private readonly Mock<IEventService> _eventServiceMock = new();
 
+    private readonly Func<IReadOnlyCollection<Teacher>, string[]> _sharedStepMessages = teachers =>
+    [
+        CreateAppointmentStepMessage.InitialMessage,
+        CreateAppointmentStepMessage.CreateChooseTeacherMessage(teachers),
+        CreateAppointmentStepMessage.SelectAppointmentDay,
+        DefaultStepMessage.ProcessingRequest
+    ];
+
+    private readonly WebAppFactoryBuilder _appFactoryBuilder;
+
+    public AddAppointmentCommandTest()
+    {
+        _appFactoryBuilder = new WebAppFactoryBuilder()
+            .WithReplacedService(_dateTimeProviderMock.Object)
+            .WithStudent(new Student { Id = Config.SenderId.ToString(), Name = "Test student", Class = "7" })
+            .WithTeachers(provider =>
+            {
+                var passwordProtector = provider.GetRequiredService<IPasswordProtector>();
+                var teachers = new List<Teacher>([
+                    Teacher.Create("teacher 1", "login 1", Password.Create("123", passwordProtector)),
+                    Teacher.Create("teacher 2", "login 2", Password.Create("123", passwordProtector))
+                ]);
+
+                return teachers;
+            });
+    }
 
     [Fact, Order(1)]
     public async Task
         CreateAppointmentAsync_WhenTeacherHasAppointmentSlotAndStudentDoesntHaveAppointment_ShouldCreateAppointment()
     {
-        const string selectedTeacherIndex = "0";
         var selectedDate = DateTime.Parse("2024.10.14");
         TimeRange[] availableAppointmentSlots =
         [
@@ -36,27 +62,11 @@ public class AddAppointmentCommandTest : BaseCommandTest
         var appointmentStartDate = selectedDate.Add(selectedAppointmentSlot.Start.ToTimeSpan());
         var appointmentEndDate = selectedDate.Add(selectedAppointmentSlot.End.ToTimeSpan());
 
-        var teachers = new List<Teacher>();
-        var student = new Student { Id = Config.SenderId.ToString(), Name = "Test student", Class = "7" };
-
-        var webApp = new WebAppFactoryBuilder()
-            .WithReplacedService(_eventServiceMock.Object)
-            .WithReplacedService(_dateTimeProviderMock.Object)
-            .WithStudent(new Student { Id = Config.SenderId.ToString(), Name = "Test student", Class = "7" })
-            .WithTeachers(provider =>
-            {
-                var passwordProtector = provider.GetRequiredService<IPasswordProtector>();
-                teachers.AddRange([
-                    Teacher.Create("teacher 1", "login 1", Password.Create("123", passwordProtector)),
-                    Teacher.Create("teacher 2", "login 2", Password.Create("123", passwordProtector))
-                ]);
-
-                teachers = teachers.OrderBy(teacher => teacher.Name).ToList();
-
-                return teachers;
-            });
+        var webApp = _appFactoryBuilder.WithReplacedService(_eventServiceMock.Object);
 
         await InitializeAsync(webApp);
+
+        var (student, teachers) = await GetStudentAndTeachersAsync(webApp.Services);
 
         var selectedTeacher = teachers[0];
 
@@ -79,22 +89,19 @@ public class AddAppointmentCommandTest : BaseCommandTest
 
         _dateTimeProviderMock.Setup(provider => provider.Now).Returns(selectedDate);
 
-        var expectedMessagesInOrder = new Queue<string>([
-            CreateAppointmentStepMessage.InitialMessage,
-            CreateAppointmentStepMessage.CreateChooseTeacherMessage(teachers),
-            CreateAppointmentStepMessage.SelectAppointmentDay,
-            DefaultStepMessage.ProcessingRequest,
+        var commandMessages = _sharedStepMessages(teachers).Concat([
             CreateAppointmentStepMessage.SelectTimeSlot,
             DefaultStepMessage.ProcessingRequest,
-            CreateAppointmentStepMessage.CreateSuccessMessage(teachers[int.Parse(selectedTeacherIndex)].Name,
+            CreateAppointmentStepMessage.CreateSuccessMessage(selectedTeacher.Name,
                 selectedDate, CreateAppointmentStepMessage.CreateTimeSlotMessage(availableAppointmentSlots[0]))
         ]);
 
+        var expectedMessagesInOrder = new Queue<string>(commandMessages);
 
         SubscribeOnUpdates(expectedMessagesInOrder);
 
         await SendUpdate(Telegram.Commands.CreateAppointmentCommand);
-        await SendUpdate(selectedTeacherIndex);
+        await SendUpdate(teachers.IndexOf(selectedTeacher).ToString());
         await SendUpdate(selectedDate.ToShortDateString());
         await SendUpdate(CreateAppointmentStepMessage.CreateTimeSlotMessage(availableAppointmentSlots[0]));
 
@@ -124,28 +131,16 @@ public class AddAppointmentCommandTest : BaseCommandTest
     public async Task CreateAppointmentAsync_WhenForDayNoTimeSlots_ShouldReturnErrorMessage()
     {
         var selectedDate = DateTime.Parse("2024.10.14");
-
-        var teachers = new List<Teacher>();
-
-        var webApp = new WebAppFactoryBuilder()
-            .WithReplacedService(_appointmentServiceMock.Object)
-            .WithReplacedService(_dateTimeProviderMock.Object)
-            .WithStudent(new Student { Id = Config.SenderId.ToString(), Name = "Test student", Class = "7" })
-            .WithTeachers(provider =>
-            {
-                var passwordProtector = provider.GetRequiredService<IPasswordProtector>();
-                teachers.AddRange([
-                    Teacher.Create("teacher 1", "login 1", Password.Create("123", passwordProtector)),
-                    Teacher.Create("teacher 2", "login 2", Password.Create("123", passwordProtector))
-                ]);
-
-                return teachers;
-            });
+        
+        var webApp = _appFactoryBuilder.WithReplacedService(_appointmentServiceMock.Object);
 
         await InitializeAsync(webApp);
-
+        
+        var (_, teachers) = await GetStudentAndTeachersAsync(webApp.Services);
+        var selectedTeacher = teachers[0];
+        
         _appointmentServiceMock.Setup(service =>
-                service.FindTeacherAvailableAppointmentSlotsAsync(teachers[0].Id, selectedDate,
+                service.FindTeacherAvailableAppointmentSlotsAsync(selectedTeacher.Id, selectedDate,
                     It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
@@ -160,28 +155,15 @@ public class AddAppointmentCommandTest : BaseCommandTest
     {
         var selectedDate = DateTime.Parse("2024.10.14");
 
-        var teachers = new List<Teacher>();
-
-        var webApp = new WebAppFactoryBuilder()
-            .WithReplacedService(_appointmentServiceMock.Object)
-            .WithReplacedService(_dateTimeProviderMock.Object)
-            .WithStudent(new Student { Id = Config.SenderId.ToString(), Name = "Test student", Class = "7" })
-            .WithTeachers(provider =>
-            {
-                var passwordProtector = provider.GetRequiredService<IPasswordProtector>();
-                teachers.AddRange([
-                    Teacher.Create("teacher 1", "login 1", Password.Create("123", passwordProtector)),
-                    Teacher.Create("teacher 2", "login 2", Password.Create("123", passwordProtector))
-                ]);
-
-                return teachers;
-            });
+        var webApp = _appFactoryBuilder.WithReplacedService(_appointmentServiceMock.Object);
 
         SetupStudentAppointment(selectedDate,
             [new StudentAppointmentInfo { DueDate = selectedDate, EventId = "test", TeacherName = "test" }]);
 
         await InitializeAsync(webApp);
-
+        
+        var (_, teachers) = await GetStudentAndTeachersAsync(webApp.Services);
+        
         await AssertThatErrorMessageWillBeSend(teachers,
             CreateAppointmentStepMessage.AlreadyHaveAppointmentOnSelectedDay, selectedDate);
     }
@@ -189,13 +171,7 @@ public class AddAppointmentCommandTest : BaseCommandTest
     private async Task AssertThatErrorMessageWillBeSend(List<Teacher> teachers, string errorMessage,
         DateTime selectedDate)
     {
-        var expectedMessagesInOrder = new Queue<string>([
-            CreateAppointmentStepMessage.InitialMessage,
-            CreateAppointmentStepMessage.CreateChooseTeacherMessage(teachers),
-            CreateAppointmentStepMessage.SelectAppointmentDay,
-            DefaultStepMessage.ProcessingRequest,
-            errorMessage
-        ]);
+        var expectedMessagesInOrder = new Queue<string>(_sharedStepMessages(teachers).Concat([errorMessage]));
 
         const string selectedTeacherIndex = "0";
         _dateTimeProviderMock.Setup(provider => provider.Now).Returns(selectedDate);
@@ -213,6 +189,18 @@ public class AddAppointmentCommandTest : BaseCommandTest
     {
         return message != CreateAppointmentStepMessage.InitialMessage.Replace("\r\n", "\n") &&
                message != DefaultStepMessage.ProcessingRequest;
+    }
+
+    private async Task<(Student student, List<Teacher> teachers)> GetStudentAndTeachersAsync(
+        IServiceProvider serviceProvider)
+    {
+        using var scope = serviceProvider.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SupernovaSchoolDbContext>();
+        var teachers = await db.Teachers.OrderBy(teacher => teacher.Name).ToListAsync();
+
+        var student = (await db.Students.FindAsync(Config.SenderId.ToString()))!;
+
+        return (student, teachers);
     }
 
     private void SetupStudentAppointment(DateTime selectedDate, List<StudentAppointmentInfo> appointmentInfos)

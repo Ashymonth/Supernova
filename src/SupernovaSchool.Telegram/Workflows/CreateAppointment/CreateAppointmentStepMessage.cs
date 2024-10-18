@@ -36,7 +36,7 @@ public static class CreateAppointmentStepMessage
         return $"{timeRange.Start} - {timeRange.End}";
     }
 
-    public static string CreateChooseTeacherMessage(List<Teacher> teachers)
+    public static string CreateChooseTeacherMessage(IReadOnlyCollection<Teacher> teachers)
     {
         var teachersList = string.Join("\n", teachers.Select((teacher, index) => $"{index}. {teacher.Name}"));
       
