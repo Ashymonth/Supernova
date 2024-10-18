@@ -47,7 +47,7 @@ public class CreateAppointmentWorkflow : IWorkflow<CreateAppointmentWorkflowData
             {
                 builder1.SendVariantsPage(CreateAppointmentStepMessage.SelectTimeSlot,
                         data => data.AvailableTimeSlots
-                            .Select(slot => $"{slot.Start} -{slot.End}")
+                            .Select(CreateAppointmentStepMessage.CreateTimeSlotMessage)
                             .ToArray())
                     .WaitForUserMessage(data => data.PaginationMessage, message => message.Message);
             })
@@ -58,6 +58,6 @@ public class CreateAppointmentWorkflow : IWorkflow<CreateAppointmentWorkflowData
             .Input(appointment => appointment.AppointmentSlot, data => data.GetTimeSlot())
             .Input(appointment => appointment.AppointmentDate, data => data.AppointmentDate)
             .CleanupAndEndWorkflow(data => CreateAppointmentStepMessage.CreateSuccessMessage(data.SelectedTeacher.Name,
-                data.AppointmentDate.ToShortDateString(), data.PaginationMessage));
+                data.AppointmentDate, data.PaginationMessage));
     }
 }

@@ -31,14 +31,18 @@ public static class CreateAppointmentStepMessage
 
     public const string SelectTimeSlot = "Выберите время для записи.";
 
+    public static string CreateTimeSlotMessage(TimeRange timeRange)
+    {
+        return $"{timeRange.Start} - {timeRange.End}";
+    }
+
     public static string CreateChooseTeacherMessage(List<Teacher> teachers)
     {
-        var teachersList = string.Join("\n",
-            teachers.OrderBy(teacher => teacher.Name).Select((teacher, index) => $"{index}. {teacher.Name}"));
-
+        var teachersList = string.Join("\n", teachers.Select((teacher, index) => $"{index}. {teacher.Name}"));
+      
         return string.Format(ChooseTeacherFromListTemplate, teachersList);
     }
 
-    public static string CreateSuccessMessage(string teacherName, string day, string time) =>
-        string.Format(SuccessMessageTemplate, teacherName, day, time);
+    public static string CreateSuccessMessage(string teacherName, DateTime day, string time) =>
+        string.Format(SuccessMessageTemplate, teacherName, day.ToShortDateString(), time);
 }

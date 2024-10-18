@@ -41,7 +41,7 @@ public class AppointmentService : IAppointmentService
     {
         var teacher = await GetTeacherOrThrowAsync(teacherId, ct);
 
-        var student = await _studentService.GetStudentAsync(studentId) ?? throw new ArgumentNullException();
+        var student = await _studentService.GetStudentAsync(studentId, ct) ?? throw new ArgumentNullException();
 
         var appointment = new Appointment(student.CreateAppointmentSummary(), startDate, endDate);
 

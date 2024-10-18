@@ -22,7 +22,7 @@ internal static class CreateAppointmentWorkflowExtensions
     {
         return builder.Then<LoadTeachersStep>()
             .Input(step => step.UserId, data => data.UserId)
-            .Output(data => data.Teachers, step => step.Teachers);
+            .Output(data => data.Teachers, step => step.Teachers.OrderBy(teacher => teacher.Name).ToList());
     }
 
     public static IStepBuilder<CreateAppointmentWorkflowData, SelectTeacherByIndexStep> RequestToSelectTeacher<TStep>(
