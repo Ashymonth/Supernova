@@ -14,8 +14,4 @@
         <ProjectReference Include="..\..\client\YandexCalendar.Net\YandexCalendar.Net.csproj"/>
     </ItemGroup>
 
-    <ItemGroup>
-        <Folder Include="Security\"/>
-    </ItemGroup>
-
 </Project>
