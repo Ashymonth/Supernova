@@ -1,4 +1,5 @@
 using SupernovaSchool.Telegram.Extensions;
+using SupernovaSchool.Telegram.Extensions.Steps;
 using SupernovaSchool.Telegram.Steps;
 using SupernovaSchool.Telegram.Steps.Common;
 using SupernovaSchool.Telegram.Workflows.RegisterStudent.Extensions;
@@ -19,20 +20,18 @@ public class RegisterStudentWorkflow : IWorkflow<RegisterStudentWorkflowData>
 
     public void Build(IWorkflowBuilder<RegisterStudentWorkflowData> builder)
     {
-        builder.SendInitialMessageToUser("Для того, чтобы записаться к психологу, вам нужно указать свои данные.")
-            .SendMessageToUser("Введите имя")
+        builder.SendMessageToUser(RegisterStudentStepMessage.CommandStartMessage, true)
+            .SendMessageToUser(RegisterStudentStepMessage.InputName)
             .WaitForUserMessage(data => data.StudentName, message => message.Message)
             .SendMessageWithPagination(data => !AvailableClasses.Contains(data.PaginationMessage), workflowBuilder =>
             {
                 workflowBuilder
-                    .SendVariantsPage("Укажите ваш поток", data => AvailableClasses)
+                    .SendVariantsPage(RegisterStudentStepMessage.InputClass, data => AvailableClasses)
                     .WaitForUserMessage(data => data.PaginationMessage, message => message.Message);
             })
-            .SendMessageToUser("Обработка запроса...")
+            .SendMessageToUser(DefaultStepMessage.ProcessingRequest)
             .RegisterStudent()
-            .Then<CleanupStep>()
-            .Input(step => step.UserId, data => data.UserId)
-            .SendMessageToUser("Вы успешно зарегистрировались. Теперь вы можете записаться к психологу", false)
-            .EndWorkflow();
+            .CleanupAndEndWorkflow(data =>
+                RegisterStudentStepMessage.CreateSuccessMessage(data.StudentName, data.PaginationMessage));
     }
 }

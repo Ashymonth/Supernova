@@ -42,7 +42,27 @@ public static class StepBuilderInlineDataExtensions
         step.Input(user => user.Page, data => data.GetPage());
         return SendVariantsInternal(step, message, getVariants);
     }
+    
+    public static IStepBuilder<TData, SendMessageWithOptionsToUser> SendVariantsPage<TData>(
+        this IWorkflowBuilder<TData> builder, Func<TData,string> messageFactory, Expression<Func<TData, string[]>> getVariants)
+        where TData : MessagePaginator, IUserStep
+    {
+        var step = builder.Then<SendMessageWithOptionsToUser>();
+        step.Input(user => user.Page, data => data.GetPage());
+        return SendVariantsInternal(step, messageFactory, getVariants);
+    }
 
+    public static IStepBuilder<TData, SendMessageWithOptionsToUser> SendVariantsPage<TData, TStep>(
+        this IStepBuilder<TData, TStep> builder, Func<TData,string> messageFactory,
+        Expression<Func<TData, string[]>> getVariants)
+        where TData : MessagePaginator, IUserStep
+        where TStep : IStepBody
+    {
+        var step = builder.Then<SendMessageWithOptionsToUser>();
+        step.Input(user => user.Page, data => data.GetPage());
+        return SendVariantsInternal(step, messageFactory, getVariants);
+    }
+    
     public static IStepBuilder<TData, SendMessageWithOptionsToUser> SendVariantsPage<TData, TStep>(
         this IStepBuilder<TData, TStep> builder, string message,
         Expression<Func<TData, string[]>> getVariants)
@@ -54,19 +74,6 @@ public static class StepBuilderInlineDataExtensions
         return SendVariantsInternal(step, message, getVariants);
     }
 
-    public static IStepBuilder<TData, SendInlineDataMessageToUser> SendInlineData<TData, TStep>(
-        this IStepBuilder<TData, TStep> builder, string message,
-        Expression<Func<TData, InlineKeyboardButton[]>> getVariants)
-        where TStep : IStepBody
-        where TData : IUserStep
-    {
-        return builder
-            .Then<SendInlineDataMessageToUser>()
-            .Input(step => step.UserId, data => data.UserId)
-            .Input(step => step.Message, _ => message)
-            .Input(step => step.Options, getVariants);
-    }
-
     private static IStepBuilder<TData, SendMessageWithOptionsToUser> SendVariantsInternal<TData>(
         this IStepBuilder<TData, SendMessageWithOptionsToUser> builder, string message,
         Expression<Func<TData, string[]>> getVariants)
@@ -75,6 +82,17 @@ public static class StepBuilderInlineDataExtensions
         return builder
             .Input(step => step.UserId, data => data.UserId)
             .Input(step => step.Message, _ => message)
+            .Input(step => step.Options, getVariants);
+    }
+    
+    private static IStepBuilder<TData, SendMessageWithOptionsToUser> SendVariantsInternal<TData>(
+        this IStepBuilder<TData, SendMessageWithOptionsToUser> builder, Func<TData, string> messageFactory,
+        Expression<Func<TData, string[]>> getVariants)
+        where TData : IUserStep
+    {
+        return builder
+            .Input(step => step.UserId, data => data.UserId)
+            .Input(step => step.Message, step => messageFactory(step))
             .Input(step => step.Options, getVariants);
     }
 }

@@ -1,3 +1,4 @@
+using SupernovaSchool.Models;
 using SupernovaSchool.Telegram.Steps;
 
 namespace SupernovaSchool.Telegram.Workflows.CreateAppointment;
@@ -6,16 +7,26 @@ public class CreateAppointmentWorkflowData : MessagePaginator, IUserStep
 {
     public bool IsStudentRegistered { get; set; }
 
+    public List<Teacher> Teachers { get; set; } = null!;
+
+    public string? SelectedTeacherIndex { get; set; }
+
+    public Teacher SelectedTeacher { get; set; } = null!;
+    
     public DateTime[] AvailableMeetingDays { get; set; } = null!;
 
     public DateTime AppointmentDate { get; set; }
-
-    public Guid TeacherId { get; set; }
-
+    
     public TimeRange[] AvailableTimeSlots { get; set; } = [];
 
     public bool UserHasAppointment { get; set; }
+    
     public string UserId { get; set; } = null!;
+
+    public bool IsTest()
+    {
+        return int.TryParse(SelectedTeacherIndex, out var result) && result >= 0 && result <= Teachers.Count;
+    }
 
     public bool IsMeetingDateValid()
     {

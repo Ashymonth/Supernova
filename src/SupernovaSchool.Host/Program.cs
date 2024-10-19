@@ -1,8 +1,9 @@
 using System.Globalization;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry.Metrics;
 using Serilog;
+using Serilog.Debugging;
 using SupernovaSchool;
 using SupernovaSchool.Abstractions;
 using SupernovaSchool.Abstractions.Repositories;
@@ -15,7 +16,6 @@ using SupernovaSchool.Host;
 using SupernovaSchool.Telegram;
 using SupernovaSchool.Telegram.Extensions;
 using SupernovaSchool.Telegram.Metrics;
-using SupernovaSchool.Telegram.Steps;
 using SupernovaSchool.Telegram.Workflows.CreateAppointment;
 using SupernovaSchool.Telegram.Workflows.CreateTeacher;
 using SupernovaSchool.Telegram.Workflows.DeleteAppointments;
@@ -35,14 +35,15 @@ Log.Logger = new LoggerConfiguration()
 
 Log.Information("Starting web host");
 
-var builder = WebApplication.CreateBuilder();
+var builder = WebApplication.CreateBuilder(args);
 
 try
 {
-    Serilog.Debugging.SelfLog.Enable(Console.WriteLine);
-    builder.Services.AddControllers();
+    SelfLog.Enable(Console.WriteLine);
 
-    builder.Services.ConfigureTelegramBot<Microsoft.AspNetCore.Http.Json.JsonOptions>(opt => opt.SerializerOptions);
+    builder.Services.AddControllers();
+    builder.Services.ConfigureTelegramBot<JsonOptions>(options => options.SerializerOptions);
+
     builder.Host.UseSerilog((_, configuration) => configuration.ReadFrom.Configuration(builder.Configuration));
 
     builder.AddServiceDefaults();
@@ -80,7 +81,6 @@ try
     builder.Services.AddTransient<UpdateHandler>();
 
     builder.Services.AddMemoryCache();
-
     builder.Services.AddTelegramBot(builder.Configuration.GetValue<string>("Bot:Token")!);
 
     builder.Services.YandexCalendarClient();
@@ -88,7 +88,18 @@ try
     builder.Services.AddSingleton<WorkflowStaterCounterMetric>();
     builder.Services.AddSingleton<StepDurationTimeMeter>();
 
+    if (builder.Environment.IsDevelopment())
+    {
+        builder.Services.AddHostedService<BackgroundTelegramService>();
+    }
+
     var app = builder.Build();
+
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<SupernovaSchoolDbContext>();
+        db.Database.Migrate();
+    }
 
     if (builder.Environment.IsDevelopment())
     {
@@ -97,25 +108,26 @@ try
 
     app.UseHttpsRedirection();
 
-    app.MapControllers();
-
     app.UseOpenTelemetryPrometheusScrapingEndpoint("metrics");
 
     app.MapDefaultEndpoints();
 
-    app.MapPost("updates", async (UpdateHandler handler, Update update, CancellationToken ct) =>
+    app.MapPost("updates",
+        async (UpdateHandler handler, Update update, CancellationToken ct) =>
+        {
+            return Results.Ok(await handler.HandleUpdateAsync(update, ct));
+        });
+
+    if (builder.Environment.IsProduction())
     {
-        await handler.HandleUpdateAsync(update, ct);
-        return Results.Ok();
-    });
+        var botUrl = builder.Configuration.GetValue<string>("Bot:WebHookUrl");
+        var bot = app.Services.GetRequiredService<ITelegramBotClient>();
+        await bot.SetWebhookAsync(string.Empty);
+        await bot.SetWebhookAsync(botUrl! + "/updates",
+            allowedUpdates: [UpdateType.Message, UpdateType.CallbackQuery], dropPendingUpdates: true);
+    }
 
-    var botUrl = builder.Configuration.GetValue<string>("Bot:Url");
-    var bot = app.Services.GetRequiredService<ITelegramBotClient>();
-    await bot.SetWebhookAsync(string.Empty);
-    await bot.SetWebhookAsync(botUrl! + "/updates",
-        allowedUpdates: [UpdateType.Message, UpdateType.CallbackQuery], dropPendingUpdates: true);
-
-    var workflow = app.Services.GetRequiredService<IWorkflowHost>();
+    var workflow = app.Services.GetRequiredService<IWorkflowHost>();    
 
     workflow.RegisterWorkflow<CreateAppointmentWorkflow, CreateAppointmentWorkflowData>();
     workflow.RegisterWorkflow<RegisterStudentWorkflow, RegisterStudentWorkflowData>();
@@ -136,4 +148,8 @@ finally
 {
     Log.Information("Shut down complete");
     Log.CloseAndFlush();
+}
+
+public partial class Program
+{
 }

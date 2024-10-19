@@ -14,7 +14,8 @@ public class StepDurationMiddleware : IWorkflowStepMiddleware
         _meter = meter;
     }
 
-    public async Task<ExecutionResult> HandleAsync(IStepExecutionContext context, IStepBody body, WorkflowStepDelegate next)
+    public async Task<ExecutionResult> HandleAsync(IStepExecutionContext context, IStepBody body,
+        WorkflowStepDelegate next)
     {
         var sw = Stopwatch.GetTimestamp();
 

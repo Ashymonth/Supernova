@@ -21,13 +21,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SupernovaSchool.Telegram", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SupernovaSchool.Application", "src\SupernovaSchool.Application\SupernovaSchool.Application.csproj", "{B17DB02F-08A9-4C20-BC0F-BF2CCFE618E3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SupernovaSchool.Tests", "tests\SupernovaSchool.Tests\SupernovaSchool.Tests.csproj", "{D78673D3-CCBB-4273-81E0-2C0315DDC8FF}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SupernovaSchool.AppHost", "src\aspire\SupernovaSchool.AppHost\SupernovaSchool.AppHost.csproj", "{D05F4941-B1B4-46AA-BE43-2B4B70ED290A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SupernovaSchool.ServiceDefaults", "src\aspire\SupernovaSchool.ServiceDefaults\SupernovaSchool.ServiceDefaults.csproj", "{C21B761F-243D-4421-97ED-0A3C99CB90D8}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "aspire", "aspire", "{B7D949E2-ADC1-42EE-97EF-49E6E16B2CC0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SupernovaSchool.Telegram.Tests", "tests\SupernovaSchool.Telegram.Tests\SupernovaSchool.Telegram.Tests.csproj", "{2DBB37D1-9488-44D3-B828-66E366F94596}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -59,10 +59,6 @@ Global
 		{B17DB02F-08A9-4C20-BC0F-BF2CCFE618E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B17DB02F-08A9-4C20-BC0F-BF2CCFE618E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B17DB02F-08A9-4C20-BC0F-BF2CCFE618E3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D78673D3-CCBB-4273-81E0-2C0315DDC8FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D78673D3-CCBB-4273-81E0-2C0315DDC8FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D78673D3-CCBB-4273-81E0-2C0315DDC8FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D78673D3-CCBB-4273-81E0-2C0315DDC8FF}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D05F4941-B1B4-46AA-BE43-2B4B70ED290A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D05F4941-B1B4-46AA-BE43-2B4B70ED290A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D05F4941-B1B4-46AA-BE43-2B4B70ED290A}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -71,6 +67,10 @@ Global
 		{C21B761F-243D-4421-97ED-0A3C99CB90D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C21B761F-243D-4421-97ED-0A3C99CB90D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C21B761F-243D-4421-97ED-0A3C99CB90D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2DBB37D1-9488-44D3-B828-66E366F94596}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2DBB37D1-9488-44D3-B828-66E366F94596}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2DBB37D1-9488-44D3-B828-66E366F94596}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2DBB37D1-9488-44D3-B828-66E366F94596}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -82,8 +82,8 @@ Global
 		{CAE6C07D-380B-4D88-B3D1-86EA792CF3FA} = {71129D2F-B400-4D00-8BFC-1804CBD040D6}
 		{ADE8164C-1C27-4B28-9FFD-E5381AB0A7CB} = {71129D2F-B400-4D00-8BFC-1804CBD040D6}
 		{B17DB02F-08A9-4C20-BC0F-BF2CCFE618E3} = {71129D2F-B400-4D00-8BFC-1804CBD040D6}
-		{D78673D3-CCBB-4273-81E0-2C0315DDC8FF} = {14B46585-D0FF-4FAF-9E18-729C14DB74DE}
 		{D05F4941-B1B4-46AA-BE43-2B4B70ED290A} = {B7D949E2-ADC1-42EE-97EF-49E6E16B2CC0}
 		{C21B761F-243D-4421-97ED-0A3C99CB90D8} = {B7D949E2-ADC1-42EE-97EF-49E6E16B2CC0}
+		{2DBB37D1-9488-44D3-B828-66E366F94596} = {14B46585-D0FF-4FAF-9E18-729C14DB74DE}
 	EndGlobalSection
 EndGlobal
