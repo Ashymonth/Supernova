@@ -118,14 +118,11 @@ try
             return Results.Ok(await handler.HandleUpdateAsync(update, ct));
         });
 
-    if (builder.Environment.IsProduction())
-    {
-        var botUrl = builder.Configuration.GetValue<string>("Bot:WebHookUrl");
-        var bot = app.Services.GetRequiredService<ITelegramBotClient>();
-        await bot.SetWebhookAsync(string.Empty);
-        await bot.SetWebhookAsync(botUrl! + "/updates",
-            allowedUpdates: [UpdateType.Message, UpdateType.CallbackQuery], dropPendingUpdates: true);
-    }
+    var botUrl = builder.Configuration.GetValue<string>("Bot:WebHookUrl");
+    var bot = app.Services.GetRequiredService<ITelegramBotClient>();
+    await bot.SetWebhookAsync(string.Empty);
+    await bot.SetWebhookAsync(botUrl! + "/updates",
+        allowedUpdates: [UpdateType.Message, UpdateType.CallbackQuery], dropPendingUpdates: true);
 
     var workflow = app.Services.GetRequiredService<IWorkflowHost>();    
 
