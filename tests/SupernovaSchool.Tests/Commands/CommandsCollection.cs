@@ -1,4 +1,4 @@
-namespace SupernovaSchool.Telegram.Tests.Commands;
+namespace SupernovaSchool.Tests.Commands;
 
 [CollectionDefinition("CommandsCollection")]
 public class CommandsCollection;

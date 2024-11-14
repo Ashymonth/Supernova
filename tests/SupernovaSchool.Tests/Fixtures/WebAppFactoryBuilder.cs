@@ -2,9 +2,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SupernovaSchool.Data;
 using SupernovaSchool.Models;
-using SupernovaSchool.Telegram.Tests.Extensions;
+using SupernovaSchool.Tests.Extensions;
 
-namespace SupernovaSchool.Telegram.Tests.Fixtures;
+namespace SupernovaSchool.Tests.Fixtures;
 
 public class WebAppFactoryBuilder : WebAppFactory
 {

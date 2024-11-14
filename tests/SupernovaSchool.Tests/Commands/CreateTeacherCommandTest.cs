@@ -1,13 +1,13 @@
 using Microsoft.Extensions.Configuration;
 using Moq;
-using SupernovaSchool.Telegram.Tests.Fixtures;
 using SupernovaSchool.Telegram.Workflows;
 using SupernovaSchool.Telegram.Workflows.CreateTeacher;
+using SupernovaSchool.Tests.Fixtures;
 using Xunit.Extensions.Ordering;
 using YandexCalendar.Net;
 using YandexCalendar.Net.Models;
 
-namespace SupernovaSchool.Telegram.Tests.Commands;
+namespace SupernovaSchool.Tests.Commands;
 
 [Collection("CommandsCollection"), Order(3)]
 public class CreateTeacherCommandTest : BaseCommandTest

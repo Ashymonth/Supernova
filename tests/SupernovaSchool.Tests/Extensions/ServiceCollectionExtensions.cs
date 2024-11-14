@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
-namespace SupernovaSchool.Telegram.Tests.Extensions;
+namespace SupernovaSchool.Tests.Extensions;
 
 internal static class ServiceCollectionExtensions
 {

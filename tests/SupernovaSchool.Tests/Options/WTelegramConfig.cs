@@ -1,4 +1,4 @@
-namespace SupernovaSchool.Telegram.Tests.Options;
+namespace SupernovaSchool.Tests.Options;
 
 public class WTelegramConfig
 {

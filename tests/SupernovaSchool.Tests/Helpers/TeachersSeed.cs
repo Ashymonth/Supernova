@@ -2,7 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SupernovaSchool.Abstractions.Security;
 using SupernovaSchool.Models;
 
-namespace SupernovaSchool.Telegram.Tests.Helpers;
+namespace SupernovaSchool.Tests.Helpers;
 
 public class TeachersSeed
 {

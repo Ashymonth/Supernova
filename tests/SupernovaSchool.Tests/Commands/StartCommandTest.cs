@@ -1,8 +1,9 @@
-using SupernovaSchool.Telegram.Tests.Fixtures;
-using SupernovaSchool.Telegram.Tests.Helpers;
+using SupernovaSchool.Telegram;
+using SupernovaSchool.Tests.Helpers;
+using SupernovaSchool.Tests.Fixtures;
 using Xunit.Extensions.Ordering;
 
-namespace SupernovaSchool.Telegram.Tests.Commands;
+namespace SupernovaSchool.Tests.Commands;
 
 [Collection("CommandsCollection"), Order(1)]
 public class StartCommandTest : BaseCommandTest, IClassFixture<WebAppFactory>

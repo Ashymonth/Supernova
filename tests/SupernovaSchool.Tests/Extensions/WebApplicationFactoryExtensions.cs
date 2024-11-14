@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Configuration;
 
-namespace SupernovaSchool.Telegram.Tests.Extensions;
+namespace SupernovaSchool.Tests.Extensions;
 
 public static class WebApplicationFactoryExtensions
 {

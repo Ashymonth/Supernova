@@ -1,7 +1,7 @@
 using System.Data.Common;
 using Microsoft.Data.Sqlite;
 
-namespace SupernovaSchool.Telegram.Tests.Helpers;
+namespace SupernovaSchool.Tests.Helpers;
 
 internal static class SqliteConnectionHelper
 {

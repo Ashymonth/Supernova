@@ -6,10 +6,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SupernovaSchool.Data;
 using SupernovaSchool.Models;
-using SupernovaSchool.Telegram.Tests.Extensions;
-using SupernovaSchool.Telegram.Tests.Helpers;
+using SupernovaSchool.Tests.Extensions;
+using SupernovaSchool.Tests.Helpers;
 
-namespace SupernovaSchool.Telegram.Tests.Fixtures;
+namespace SupernovaSchool.Tests.Fixtures;
 
 public class WebAppFactory : WebApplicationFactory<Program>
 {

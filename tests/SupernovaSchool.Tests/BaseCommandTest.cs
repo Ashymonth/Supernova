@@ -2,8 +2,8 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
-using SupernovaSchool.Telegram.Tests.Helpers;
-using SupernovaSchool.Telegram.Tests.Options;
+using SupernovaSchool.Tests.Helpers;
+using SupernovaSchool.Tests.Options;
 using TL;
 using WTelegram;
 using Message = TL.Message;
@@ -12,7 +12,7 @@ using TgMessage = Telegram.Bot.Types.Message;
 using TgUser = Telegram.Bot.Types.User;
 
 
-namespace SupernovaSchool.Telegram.Tests;
+namespace SupernovaSchool.Tests;
 
 public class BaseCommandTest : IDisposable
 {

@@ -1,8 +1,8 @@
-using SupernovaSchool.Telegram.Tests.Options;
+using SupernovaSchool.Tests.Options;
 using TL;
 using WTelegram;
 
-namespace SupernovaSchool.Telegram.Tests.Helpers;
+namespace SupernovaSchool.Tests.Helpers;
 
 public class WTelegramClientFactory
 {

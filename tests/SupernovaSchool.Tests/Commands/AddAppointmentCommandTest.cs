@@ -5,13 +5,13 @@ using SupernovaSchool.Abstractions;
 using SupernovaSchool.Abstractions.Security;
 using SupernovaSchool.Data;
 using SupernovaSchool.Models;
-using SupernovaSchool.Telegram.Tests.Fixtures;
 using SupernovaSchool.Telegram.Workflows;
 using SupernovaSchool.Telegram.Workflows.CreateAppointment;
+using SupernovaSchool.Tests.Fixtures;
 using Xunit.Extensions.Ordering;
 using YandexCalendar.Net.Models;
 
-namespace SupernovaSchool.Telegram.Tests.Commands;
+namespace SupernovaSchool.Tests.Commands;
 
 [Collection("CommandsCollection"), Order(4)]
 public class AddAppointmentCommandTest : BaseCommandTest
