@@ -112,11 +112,8 @@ try
 
     app.MapDefaultEndpoints();
 
-    app.MapPost("updates",
-        async (UpdateHandler handler, Update update, CancellationToken ct) =>
-        {
-            return Results.Ok(await handler.HandleUpdateAsync(update, ct));
-        });
+    app.MapPost("updates", async (UpdateHandler handler, Update update, CancellationToken ct) =>
+            TypedResults.Ok(await handler.HandleUpdateAsync(update, ct)));
 
     var botUrl = builder.Configuration.GetValue<string>("Bot:WebHookUrl");
     var bot = app.Services.GetRequiredService<ITelegramBotClient>();
@@ -124,7 +121,7 @@ try
     await bot.SetWebhookAsync(botUrl! + "/updates",
         allowedUpdates: [UpdateType.Message, UpdateType.CallbackQuery], dropPendingUpdates: true);
 
-    var workflow = app.Services.GetRequiredService<IWorkflowHost>();    
+    var workflow = app.Services.GetRequiredService<IWorkflowHost>();
 
     workflow.RegisterWorkflow<CreateAppointmentWorkflow, CreateAppointmentWorkflowData>();
     workflow.RegisterWorkflow<RegisterStudentWorkflow, RegisterStudentWorkflowData>();
@@ -147,6 +144,7 @@ finally
     Log.CloseAndFlush();
 }
 
+//need for integration tests
 public partial class Program
 {
 }
