@@ -145,6 +145,4 @@ finally
 }
 
 //need for integration tests
-public partial class Program
-{
-}
+public partial class Program;

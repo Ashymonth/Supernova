@@ -144,7 +144,6 @@ public class AppointmentService : IAppointmentService
 
     private List<TimeRange> FindAvailableTimeSlots(DateTime meetingDay, List<TimeSlot> reservedSlots)
     {
-        var sw = Stopwatch.GetTimestamp();
         // Sort reserved slots by their start time for easier comparison.
         reservedSlots.Sort((x, y) => x.Start.CompareTo(y.Start));
 
@@ -163,7 +162,6 @@ public class AppointmentService : IAppointmentService
             slotStart = slotStart.Add(SlotInterval);
         }
 
-        Console.WriteLine(Stopwatch.GetElapsedTime(sw));
         return result;
     }
 
