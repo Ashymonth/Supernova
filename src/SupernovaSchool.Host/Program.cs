@@ -15,6 +15,7 @@ using SupernovaSchool.Data;
 using SupernovaSchool.Data.Repositories;
 using SupernovaSchool.Host;
 using SupernovaSchool.Host.Configs;
+using SupernovaSchool.Host.Extensions;
 using SupernovaSchool.Telegram;
 using SupernovaSchool.Telegram.Extensions;
 using SupernovaSchool.Telegram.Metrics;
@@ -126,11 +127,7 @@ try
 
     var workflow = app.Services.GetRequiredService<IWorkflowHost>();
 
-    workflow.RegisterWorkflow<CreateAppointmentWorkflow, CreateAppointmentWorkflowData>();
-    workflow.RegisterWorkflow<RegisterStudentWorkflow, RegisterStudentWorkflowData>();
-    workflow.RegisterWorkflow<DeleteMyAppointmentsWorkflow, DeleteMyAppointmentsWorkflowData>();
-    workflow.RegisterWorkflow<CreateTeacherWorkflow, CreateTeacherWorkflowData>();
-    workflow.Start();
+    workflow.AddWorkflowsAndStart();
 
     app.Run();
 
