@@ -18,10 +18,10 @@ namespace SupernovaSchool.Telegram.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static void AddTelegramBot(this IServiceCollection services, string botToken)
+    public static void AddTelegramBot(this IServiceCollection services, Func<IServiceProvider,string> botTokenFactory)
     {
         ArgumentNullException.ThrowIfNull(services);
-        ArgumentException.ThrowIfNullOrWhiteSpace(botToken);
+        ArgumentNullException.ThrowIfNull(botTokenFactory);
         
         services.AddWorkflow();
         services.AddWorkflowMiddleware<DiagnosticMiddleware>();
@@ -47,7 +47,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IUserSessionStorage, UserSessionStorage>();
         services.AddSingleton<CommandRegistry>();
 
-        services.AddSingleton<ITelegramBotClient>(_ => new TelegramBotClient(botToken));
+        services.AddSingleton<ITelegramBotClient>(provider => new TelegramBotClient(botTokenFactory(provider)));
         services.AddSingleton<ICommandUploader, CommandUploader>();
     }
 }
