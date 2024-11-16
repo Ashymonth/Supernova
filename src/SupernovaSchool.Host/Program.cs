@@ -46,9 +46,7 @@ try
     builder.Services.ConfigureOptions<SecurityConfigSetup>();
     builder.Services.ConfigureOptions<TelegramBotConfigSetup>();
     builder.Services.ConfigureTelegramBot<JsonOptions>(options => options.SerializerOptions);
-    
-    builder.Services.AddControllers();
-    
+
     builder.AddServiceDefaults();
  
     builder.Services.AddDbContext<SupernovaSchoolDbContext>(optionsBuilder =>
