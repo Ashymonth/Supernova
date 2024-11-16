@@ -42,6 +42,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 try
 {
+    builder.AddSerilogAndOpenTelemetry();
     builder.Services.ConfigureOptions<SecurityConfigSetup>();
     builder.Services.ConfigureOptions<TelegramBotConfigSetup>();
     builder.Services.ConfigureTelegramBot<JsonOptions>(options => options.SerializerOptions);
@@ -49,17 +50,7 @@ try
     builder.Services.AddControllers();
     
     builder.AddServiceDefaults();
-    
-    builder.Host.UseSerilog((_, configuration) => configuration.ReadFrom.Configuration(builder.Configuration));
-    builder.Services.AddOpenTelemetry()
-        .WithTracing()
-        .WithMetrics(providerBuilder => providerBuilder
-            .AddMeter(WorkflowStaterCounterMetric.MeterName)
-            .AddMeter(StepDurationTimeMeter.MeterName)
-            .AddPrometheusExporter()
-            .AddAspNetCoreInstrumentation()
-            .AddRuntimeInstrumentation());
-
+ 
     builder.Services.AddDbContext<SupernovaSchoolDbContext>(optionsBuilder =>
         optionsBuilder.UseSqlite(builder.Configuration.GetConnectionString("Sqlite")));
 
@@ -89,9 +80,6 @@ try
 
     builder.Services.YandexCalendarClient();
 
-    builder.Services.AddSingleton<WorkflowStaterCounterMetric>();
-    builder.Services.AddSingleton<StepDurationTimeMeter>();
-
     if (builder.Environment.IsDevelopment())
     {
         builder.Services.AddHostedService<BackgroundTelegramService>();
@@ -119,15 +107,9 @@ try
     app.MapPost("updates", async (UpdateHandler handler, Update update, CancellationToken ct) =>
             TypedResults.Ok(await handler.HandleUpdateAsync(update, ct)));
 
-    var botUrl = app.Services.GetRequiredService<IOptions<TelegramBotConfig>>().Value.WebHookUrl;
-    var bot = app.Services.GetRequiredService<ITelegramBotClient>();
-    await bot.SetWebhookAsync(string.Empty);
-    await bot.SetWebhookAsync(botUrl + "/updates",
-        allowedUpdates: [UpdateType.Message, UpdateType.CallbackQuery], dropPendingUpdates: true);
+    await app.MapTelegramWebHookAsync();
 
-    var workflow = app.Services.GetRequiredService<IWorkflowHost>();
-
-    workflow.AddWorkflowsAndStart();
+    app.UserWorkflowsAndStartHost();
 
     app.Run();
 

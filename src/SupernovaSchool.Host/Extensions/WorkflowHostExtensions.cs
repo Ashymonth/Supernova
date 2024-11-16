@@ -8,12 +8,14 @@ namespace SupernovaSchool.Host.Extensions;
 
 internal static class WorkflowHostExtensions
 {
-    public static void AddWorkflowsAndStart(this IWorkflowHost workflowHost)
+    public static void UserWorkflowsAndStartHost(this WebApplication webApplication)
     {
-       workflowHost.RegisterWorkflow<CreateAppointmentWorkflow, CreateAppointmentWorkflowData>();
-       workflowHost.RegisterWorkflow<RegisterStudentWorkflow, RegisterStudentWorkflowData>();
-       workflowHost.RegisterWorkflow<DeleteMyAppointmentsWorkflow, DeleteMyAppointmentsWorkflowData>();
-       workflowHost.RegisterWorkflow<CreateTeacherWorkflow, CreateTeacherWorkflowData>();
-       workflowHost.Start();
-    } 
+        var workflowHost = webApplication.Services.GetRequiredService<IWorkflowHost>();
+        
+        workflowHost.RegisterWorkflow<CreateAppointmentWorkflow, CreateAppointmentWorkflowData>();
+        workflowHost.RegisterWorkflow<RegisterStudentWorkflow, RegisterStudentWorkflowData>();
+        workflowHost.RegisterWorkflow<DeleteMyAppointmentsWorkflow, DeleteMyAppointmentsWorkflowData>();
+        workflowHost.RegisterWorkflow<CreateTeacherWorkflow, CreateTeacherWorkflowData>();
+        workflowHost.Start();
+    }
 }
