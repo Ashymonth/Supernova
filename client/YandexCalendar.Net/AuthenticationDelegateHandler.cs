@@ -10,7 +10,7 @@ internal class AuthenticationDelegateHandler : DelegatingHandler
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
-        var key = new HttpRequestOptionsKey<UserCredentials>("credentials");
+        var key = new HttpRequestOptionsKey<UserCredentials>(CredentialsKey);
         if (!request.Options.TryGetValue(key, out var value))
         {
             throw new InvalidOperationException("The request does not contain a credentials.");

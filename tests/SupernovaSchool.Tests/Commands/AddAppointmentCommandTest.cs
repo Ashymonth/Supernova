@@ -128,7 +128,7 @@ public class AddAppointmentCommandTest : BaseCommandTest
     }
 
     [Fact, Order(3)]
-    public async Task CreateAppointmentAsync_WhenDoesntHaveFreeTimeSlots_ShouldReturnErrorMessage()
+    public async Task CreateAppointmentAsync_WhenTeacherDoesntHaveFreeTimeSlots_ShouldReturnErrorMessage()
     {
         var selectedDate = DateTime.Parse("2024.10.14");
         

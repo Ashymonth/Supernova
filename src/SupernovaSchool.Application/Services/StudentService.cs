@@ -2,7 +2,6 @@ using Microsoft.Extensions.Caching.Memory;
 using SupernovaSchool.Abstractions;
 using SupernovaSchool.Abstractions.Repositories;
 using SupernovaSchool.Models;
-using SupernovaSchool.Specifications;
 
 namespace SupernovaSchool.Application.Services;
 
