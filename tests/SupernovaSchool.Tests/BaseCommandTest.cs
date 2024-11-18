@@ -16,8 +16,14 @@ namespace SupernovaSchool.Tests;
 
 public class BaseCommandTest : IDisposable
 {
-    private Exception? _capturedException;  // To capture exceptions in the event handler
-    
+    private Exception? _capturedException; // To capture exceptions in the event handler
+
+    private readonly AutoResetEvent _locker = new(false);
+
+    private Client _wTelegramClient = null!;
+
+    private HttpClient _appClient = null!;
+
     protected BaseCommandTest()
     {
         var configuration = new ConfigurationBuilder()
@@ -30,43 +36,38 @@ public class BaseCommandTest : IDisposable
         Config = config;
     }
 
-    private AutoResetEvent Locker { get; } = new(false);
-
-    private Client WTelegramClient { get; set; } = null!;
-
-    private HttpClient AppClient { get; set; } = null!;
-    
     protected WTelegramConfig Config { get; }
 
     protected async Task InitializeAsync(WebApplicationFactory<Program> applicationFactory)
     {
-        WTelegramClient = await WTelegramClientFactory.CreateClient(Config);
-        AppClient = applicationFactory.CreateClient();
+        _wTelegramClient = await WTelegramClientFactory.CreateClient(Config);
+        _appClient = applicationFactory.CreateClient();
     }
 
     protected void SubscribeOnUpdates(Queue<string> expectedMessagesInOrder)
     {
-        WTelegramClient.OnUpdates += update => TgClientOnOnUpdates(update, expectedMessagesInOrder, Locker);
+        _wTelegramClient.OnUpdates += update => TgClientOnOnUpdates(update, expectedMessagesInOrder, _locker);
     }
 
     protected async Task SendUpdate(string message)
     {
         Assert.Null(_capturedException);
-        
-        using var response = await AppClient.PostAsJsonAsync("/updates", new TgUpdate
-        {
-            Message = new TgMessage { Text = message, From = new TgUser { FirstName = "Test",Id = Config.SenderId } }
-        }, new JsonSerializerOptions(JsonSerializerDefaults.Web){Converters = {  }});
 
-        Locker.WaitOne();
+        using var response = await _appClient.PostAsJsonAsync("/updates", new TgUpdate
+        {
+            Message = new TgMessage { Text = message, From = new TgUser { FirstName = "Test", Id = Config.SenderId } }
+        }, new JsonSerializerOptions(JsonSerializerDefaults.Web) { Converters = { } });
+
+        _locker.WaitOne();
     }
 
     protected virtual bool IsFinalUpdateInStep(string message)
     {
         return true;
     }
-    
-    private Task TgClientOnOnUpdates(UpdatesBase updateEvent, Queue<string> expectedMessagesInOrder, AutoResetEvent locker)
+
+    private Task TgClientOnOnUpdates(UpdatesBase updateEvent, Queue<string> expectedMessagesInOrder,
+        AutoResetEvent locker)
     {
         try
         {
@@ -92,12 +93,12 @@ public class BaseCommandTest : IDisposable
                 return Task.CompletedTask;
             }
 
-            locker.Set();  // Signal the event is processed
+            locker.Set(); // Signal the event is processed
         }
         catch (Exception ex)
         {
-            _capturedException = ex;  // Capture exception
-            locker.Set();  // Ensure the test does not the app froze
+            _capturedException = ex; // Capture exception
+            locker.Set(); // Ensure the test does not the app froze
         }
 
         return Task.CompletedTask;
@@ -105,9 +106,9 @@ public class BaseCommandTest : IDisposable
 
     public void Dispose()
     {
-        Locker.Dispose();
-        WTelegramClient.Dispose();
-        AppClient.Dispose();
+        _locker.Dispose();
+        _wTelegramClient.Dispose();
+        _appClient.Dispose();
         GC.SuppressFinalize(this);
     }
 }
