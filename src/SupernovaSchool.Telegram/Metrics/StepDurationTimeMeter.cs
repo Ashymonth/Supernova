@@ -16,6 +16,6 @@ public class StepDurationTimeMeter
 
     public void RecordStepDuration(string stepName, TimeSpan duration)
     {
-        _counter.Record(duration.TotalMilliseconds, new KeyValuePair<string, object?>("supernova.step.name", stepName));
+        _counter.Record(duration.TotalMilliseconds, new KeyValuePair<string, object?>("step_name", stepName));
     }
 }

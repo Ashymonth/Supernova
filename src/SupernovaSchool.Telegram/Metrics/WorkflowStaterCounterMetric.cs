@@ -10,12 +10,12 @@ public class WorkflowStaterCounterMetric
 
     public WorkflowStaterCounterMetric(IMeterFactory meterFactory)
     {
-        var meter = meterFactory.Create("supernova.workflow");
-        _counter = meter.CreateCounter<int>("supernova.workflow.started");
+        var meter = meterFactory.Create(MeterName);
+        _counter = meter.CreateCounter<int>($"{MeterName}.started");
     }
 
     public void WorkflowStarted(string workflowName)
     {
-        _counter.Add(1, new KeyValuePair<string, object?>("supernova.workflow.name", workflowName));
+        _counter.Add(1, new KeyValuePair<string, object?>("workflow_name", workflowName));
     }
 }
