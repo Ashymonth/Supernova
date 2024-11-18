@@ -10,7 +10,7 @@ namespace SupernovaSchool.Application.Services;
 public class AppointmentService : IAppointmentService
 {
     private static readonly TimeZoneInfo MoscowTimeZone =
-        Environment.OSVersion.Platform == PlatformID.Win32Windows
+        Environment.OSVersion.Platform != PlatformID.Unix
             ? TimeZoneInfo.FindSystemTimeZoneById("Russian Standard Time")
             : TimeZoneInfo.FindSystemTimeZoneById("Europe/Moscow");
 
