@@ -78,11 +78,6 @@ try
 
     builder.Services.YandexCalendarClient();
 
-    if (builder.Environment.IsDevelopment())
-    {
-        builder.Services.AddHostedService<BackgroundTelegramService>();
-    }
-
     var app = builder.Build();
 
     using (var scope = app.Services.CreateScope())

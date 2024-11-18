@@ -18,7 +18,7 @@ public class CleanupStep : IUserStep, IStepBody
     {
         ArgumentException.ThrowIfNullOrEmpty(UserId);
 
-        await _userSessionStorage.TerminateWorkflow(UserId, context.CancellationToken);
+        await _userSessionStorage.TerminateWorkflow(UserId, false, context.CancellationToken);
 
         return ExecutionResult.Next();
     }

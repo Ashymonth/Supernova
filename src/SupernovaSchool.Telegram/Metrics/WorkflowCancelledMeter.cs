@@ -14,7 +14,7 @@ public class WorkflowCancelledMeter
         _counter = meter.CreateCounter<int>($"{MeterName}.canceled");
     }
 
-    public void WorkflowStarted(string workflowName)
+    public void WorkflowCancelled(string workflowName)
     {
         _counter.Add(1, new KeyValuePair<string, object?>("workflow_name", workflowName));
     }

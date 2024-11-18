@@ -9,7 +9,7 @@ namespace SupernovaSchool.Telegram;
 
 public class UpdateHandler
 {
-    protected readonly ITelegramBotClient _telegramBotClient;
+    private readonly ITelegramBotClient _telegramBotClient;
     private readonly IWorkflowHost _workflowHost;
     private readonly CommandRegistry _commandRegistry;
     private readonly IUserSessionStorage _userSessionStorage;
@@ -46,9 +46,9 @@ public class UpdateHandler
 
         _conversationHistory.AddMessage(userId, messageId.Value);
 
-        if (string.Equals("выйти", message, StringComparison.InvariantCultureIgnoreCase))
+        if (string.Equals(CommandText.ExitCommand, message, StringComparison.InvariantCultureIgnoreCase))
         {
-            await _userSessionStorage.TerminateWorkflow(userId, token);
+            await _userSessionStorage.TerminateWorkflow(userId, true, token);
             return await _telegramBotClient.SendTextMessageAsync(userId, CommandText.CommandCanceled,
                 cancellationToken: token);
         }
