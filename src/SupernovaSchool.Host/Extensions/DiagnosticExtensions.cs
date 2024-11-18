@@ -21,6 +21,7 @@ internal static class DiagnosticExtensions
         
         
         builder.Services.AddSingleton<WorkflowStaterCounterMetric>();
+        builder.Services.AddSingleton<WorkflowCancelledMeter>();
         builder.Services.AddSingleton<StepDurationTimeMeter>();
     }
 }
