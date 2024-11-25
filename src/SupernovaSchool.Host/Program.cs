@@ -46,8 +46,6 @@ try
     builder.Services.ConfigureOptions<SecurityConfigSetup>();
     builder.Services.ConfigureOptions<TelegramBotConfigSetup>();
     builder.Services.ConfigureTelegramBot<JsonOptions>(options => options.SerializerOptions);
-
-    builder.AddServiceDefaults();
  
     builder.Services.AddDbContext<SupernovaSchoolDbContext>(optionsBuilder =>
         optionsBuilder.UseSqlite(builder.Configuration.GetConnectionString("Sqlite")));
@@ -94,8 +92,6 @@ try
     app.UseHttpsRedirection();
 
     app.UseOpenTelemetryPrometheusScrapingEndpoint();
-
-    app.MapDefaultEndpoints();
 
     app.MapPost("updates", async (UpdateHandler handler, Update update, CancellationToken ct) =>
             TypedResults.Ok(await handler.HandleUpdateAsync(update, ct)));

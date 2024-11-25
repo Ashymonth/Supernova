@@ -33,7 +33,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\client\YandexCalendar.Net\YandexCalendar.Net.csproj" />
-        <ProjectReference Include="..\aspire\SupernovaSchool.ServiceDefaults\SupernovaSchool.ServiceDefaults.csproj" />
         <ProjectReference Include="..\SupernovaSchool.Application\SupernovaSchool.Application.csproj" />
         <ProjectReference Include="..\SupernovaSchool.Data\SupernovaSchool.Data.csproj" />
         <ProjectReference Include="..\SupernovaSchool.Telegram\SupernovaSchool.Telegram.csproj" />
