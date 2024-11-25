@@ -34,12 +34,12 @@ public class CommandUploader : ICommandUploader
     {
         if (!_adminsProvider.IsAdmin(userId))
         {
-            await _telegramBotClient.SetMyCommandsAsync(DefaultCommands, BotCommandScope.Chat(userId),
+            await _telegramBotClient.SetMyCommands(DefaultCommands, BotCommandScope.Chat(userId),
                 cancellationToken: ct);
             return;
         }
 
-        await _telegramBotClient.SetMyCommandsAsync(DefaultCommands.Concat([CreateTeacherCommand]),
+        await _telegramBotClient.SetMyCommands(DefaultCommands.Concat([CreateTeacherCommand]),
             BotCommandScope.Chat(userId), cancellationToken: ct);
     }
 }

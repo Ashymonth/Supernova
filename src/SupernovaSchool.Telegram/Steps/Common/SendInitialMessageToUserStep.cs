@@ -25,7 +25,7 @@ public class SendInitialMessageToUserStep : IStepBody, IUserStep
     {
         var message = string.Format(InitialMessageTemplate, Message);
 
-        var sentMessage = await _client.SendTextMessageAsync(UserId, message, cancellationToken: context.CancellationToken);
+        var sentMessage = await _client.SendMessage(UserId, message, cancellationToken: context.CancellationToken);
 
         _conversationHistory.AddMessage(UserId, sentMessage.MessageId);
         

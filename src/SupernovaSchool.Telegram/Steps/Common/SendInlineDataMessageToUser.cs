@@ -27,7 +27,7 @@ public class SendInlineDataMessageToUser : IUserStep, IStepBody
         var replyMarkup = new InlineKeyboardMarkup(Options);
 
         var result =
-            await _telegramBotClient.SendTextMessageAsync(int.Parse(UserId), Message, replyMarkup: replyMarkup);
+            await _telegramBotClient.SendMessage(int.Parse(UserId), Message, replyMarkup: replyMarkup);
 
         _conversationHistory.AddMessage(UserId, result.MessageId);
 
