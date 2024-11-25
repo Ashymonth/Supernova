@@ -21,17 +21,17 @@ public class CalendarItem
 public class PropertyStatus
 {
     [XmlElement(ElementName = "prop", Namespace = "DAV:")]
-    public CalendarProperties CalendarProperties { get; set; }
+    public CalendarProperties? CalendarProperties { get; set; }
 
     [XmlElement(ElementName = "status", Namespace = "DAV:")]
-    public string Status { get; set; }
+    public string? Status { get; set; }
 }
 
 public class CalendarProperties
 {
     [XmlElement(ElementName = "getetag", Namespace = "DAV:")]
-    public string Etag { get; set; }
+    public string? Etag { get; set; }
 
     [XmlElement(ElementName = "calendar-data", Namespace = "urn:ietf:params:xml:ns:caldav")]
-    public string CalendarEventData { get; set; }
+    public string? CalendarEventData { get; set; }
 }
