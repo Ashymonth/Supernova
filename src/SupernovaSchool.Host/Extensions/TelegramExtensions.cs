@@ -11,8 +11,8 @@ internal static class TelegramExtensions
     {
         var botUrl = webApplication.Services.GetRequiredService<IOptions<TelegramBotConfig>>().Value.WebHookUrl;
         var bot = webApplication.Services.GetRequiredService<ITelegramBotClient>();
-        await bot.SetWebhookAsync(string.Empty);
-        await bot.SetWebhookAsync(botUrl + "/updates",
+        await bot.SetWebhook(string.Empty);
+        await bot.SetWebhook(botUrl + "/updates",
             allowedUpdates: [UpdateType.Message, UpdateType.CallbackQuery], dropPendingUpdates: true);
     }
 }

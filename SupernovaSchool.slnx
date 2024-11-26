@@ -1,8 +1,4 @@
 ﻿<Solution>
-  <Folder Name="/aspire/">
-    <Project Path="src\aspire\SupernovaSchool.AppHost\SupernovaSchool.AppHost.csproj" Type="Classic C#" />
-    <Project Path="src\aspire\SupernovaSchool.ServiceDefaults\SupernovaSchool.ServiceDefaults.csproj" />
-  </Folder>
   <Folder Name="/client/">
     <Project Path="client\YandexCalendar.Net\YandexCalendar.Net.csproj" />
   </Folder>

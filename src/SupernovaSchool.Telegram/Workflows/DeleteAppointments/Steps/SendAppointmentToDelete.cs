@@ -32,7 +32,7 @@ public class SendAppointmentToDelete : IUserStep, IStepBody
                 var button = InlineKeyboardButton.WithCallbackData("Удалить",
                     studentAppointmentInfo.DueDate.ToString(CultureInfo.GetCultureInfo("ru-RU")));
 
-                var message = await _telegramBotClient.SendTextMessageAsync(UserId,
+                var message = await _telegramBotClient.SendMessage(UserId,
                     $"{studentAppointmentInfo.TeacherName} - {studentAppointmentInfo.DueDate}",
                     replyMarkup: new InlineKeyboardMarkup(button),
                     cancellationToken: context.CancellationToken);

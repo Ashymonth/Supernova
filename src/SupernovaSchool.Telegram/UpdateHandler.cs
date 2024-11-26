@@ -34,13 +34,13 @@ public class UpdateHandler
         var messageId = update.Message?.MessageId ?? update.CallbackQuery?.Message?.MessageId!;
         var userId = update.Message?.From?.Id.ToString() ?? update.CallbackQuery?.From.Id.ToString()!;
 
-        await _telegramBotClient.SendChatActionAsync(long.Parse(userId), ChatAction.Typing,
+        await _telegramBotClient.SendChatAction(long.Parse(userId), ChatAction.Typing,
             cancellationToken: token);
 
         if (string.Equals(Commands.StartCommand, message, StringComparison.InvariantCultureIgnoreCase))
         {
             await _commandUploader.UploadUserCommandsAsync(userId, token);
-            return await _telegramBotClient.SendTextMessageAsync(userId, CommandText.StartCommandMessage,
+            return await _telegramBotClient.SendMessage(userId, CommandText.StartCommandMessage,
                 cancellationToken: token);
         }
 
@@ -49,7 +49,7 @@ public class UpdateHandler
         if (string.Equals(CommandText.ExitCommand, message, StringComparison.InvariantCultureIgnoreCase))
         {
             await _userSessionStorage.TerminateWorkflow(userId, true, token);
-            return await _telegramBotClient.SendTextMessageAsync(userId, CommandText.CommandCanceled,
+            return await _telegramBotClient.SendMessage(userId, CommandText.CommandCanceled,
                 cancellationToken: token);
         }
 
@@ -57,7 +57,7 @@ public class UpdateHandler
         {
             if (!await _userSessionStorage.StartWorkflow(userId, message, workflowDataFactory!(userId)))
             {
-                return await _telegramBotClient.SendTextMessageAsync(userId,
+                return await _telegramBotClient.SendMessage(userId,
                     CommandText.CannotInvokeCommandUntilActiveCommandExist,
                     cancellationToken: token);
             }

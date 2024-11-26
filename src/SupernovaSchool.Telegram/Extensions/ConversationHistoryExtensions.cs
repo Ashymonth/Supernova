@@ -17,7 +17,7 @@ internal static class ConversationHistoryExtensions
             {
                 try
                 {
-                    await botClient.DeleteMessageAsync(userId, messageId, cancellationToken: token);
+                    await botClient.DeleteMessage(userId, messageId, cancellationToken: token);
                 }
                 catch (Exception e)
                 {
