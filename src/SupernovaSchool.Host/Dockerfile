@@ -8,6 +8,11 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["src/SupernovaSchool.Host/SupernovaSchool.Host.csproj", "src/SupernovaSchool.Host/"]
+COPY ["client/YandexCalendar.Net/YandexCalendar.Net.csproj", "client/YandexCalendar.Net/"]
+COPY ["src/SupernovaSchool.Application/SupernovaSchool.Application.csproj", "src/SupernovaSchool.Application/"]
+COPY ["src/SupernovaSchool/SupernovaSchool.csproj", "src/SupernovaSchool/"]
+COPY ["src/SupernovaSchool.Data/SupernovaSchool.Data.csproj", "src/SupernovaSchool.Data/"]
+COPY ["src/SupernovaSchool.Telegram/SupernovaSchool.Telegram.csproj", "src/SupernovaSchool.Telegram/"]
 RUN dotnet restore "src/SupernovaSchool.Host/SupernovaSchool.Host.csproj"
 COPY . .
 WORKDIR "/src/src/SupernovaSchool.Host"
