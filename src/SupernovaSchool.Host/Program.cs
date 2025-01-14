@@ -48,7 +48,7 @@ try
     builder.Services.ConfigureTelegramBot<JsonOptions>(options => options.SerializerOptions);
  
     builder.Services.AddDbContext<SupernovaSchoolDbContext>(optionsBuilder =>
-        optionsBuilder.UseSqlite(builder.Configuration.GetConnectionString("Sqlite")));
+        optionsBuilder.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
     builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
     builder.Services.AddScoped<IUnitOfWork, UnitOfWork>(); 
