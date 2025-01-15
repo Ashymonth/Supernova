@@ -2,9 +2,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using OpenTelemetry.Metrics;
 using Serilog;
-using Serilog.Debugging;
 using SupernovaSchool;
 using SupernovaSchool.Abstractions;
 using SupernovaSchool.Abstractions.Repositories;
@@ -18,15 +16,7 @@ using SupernovaSchool.Host.Configs;
 using SupernovaSchool.Host.Extensions;
 using SupernovaSchool.Telegram;
 using SupernovaSchool.Telegram.Extensions;
-using SupernovaSchool.Telegram.Metrics;
-using SupernovaSchool.Telegram.Workflows.CreateAppointment;
-using SupernovaSchool.Telegram.Workflows.CreateTeacher;
-using SupernovaSchool.Telegram.Workflows.DeleteAppointments;
-using SupernovaSchool.Telegram.Workflows.RegisterStudent;
-using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.Enums;
-using WorkflowCore.Interface;
 using YandexCalendar.Net.Extensions;
 using IDateTimeProvider = SupernovaSchool.Abstractions.IDateTimeProvider;
 
@@ -38,10 +28,9 @@ Log.Logger = new LoggerConfiguration()
 
 Log.Information("Starting web host");
 
-var builder = WebApplication.CreateBuilder(args);
-
 try
 {
+    var builder = WebApplication.CreateBuilder(args);
     builder.AddSerilogAndOpenTelemetry();
     builder.Services.ConfigureOptions<SecurityConfigSetup>();
     builder.Services.ConfigureOptions<TelegramBotConfigSetup>();
@@ -49,7 +38,7 @@ try
  
     builder.Services.AddDbContext<SupernovaSchoolDbContext>(optionsBuilder =>
         optionsBuilder.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
+    
     builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
     builder.Services.AddScoped<IUnitOfWork, UnitOfWork>(); 
     
@@ -78,12 +67,6 @@ try
 
     var app = builder.Build();
 
-    using (var scope = app.Services.CreateScope())
-    {
-        var db = scope.ServiceProvider.GetRequiredService<SupernovaSchoolDbContext>();
-        db.Database.Migrate();
-    }
-
     if (builder.Environment.IsDevelopment())
     {
         app.UseDeveloperExceptionPage();
@@ -94,10 +77,10 @@ try
     app.UseOpenTelemetryPrometheusScrapingEndpoint();
 
     app.MapPost("updates", async (UpdateHandler handler, Update update, CancellationToken ct) =>
-            TypedResults.Ok(await handler.HandleUpdateAsync(update, ct)));
-
-    await app.MapTelegramWebHookAsync();
-
+    {
+        return TypedResults.Ok(await handler.HandleUpdateAsync(update, ct));
+    });
+ 
     app.UserWorkflowsAndStartHost();
 
     app.Run();
@@ -106,6 +89,8 @@ try
 }
 catch (Exception ex)
 {
+    Console.WriteLine(ex.Message);
+    Log.Information(ex.Message);
     Log.Fatal(ex, "Host terminated unexpectedly");
     return 1;
 }
