@@ -12,7 +12,7 @@ public class CommandText
                                         Любую команду можно преравть, если ты напишешь 'Выйти'
                                         """;
 
-    public const string ExitCommand = "Команда отменена";
+    public const string ExitCommand = "Выйти";
     public const string CommandCanceled = "Команда отменена";
     public const string CannotInvokeCommandUntilActiveCommandExist = "Нельзя вызвать новую команду, пока вы не завершили старую";
 }
