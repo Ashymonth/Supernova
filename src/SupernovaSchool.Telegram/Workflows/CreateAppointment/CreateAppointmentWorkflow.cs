@@ -1,3 +1,4 @@
+using SupernovaSchool.Extensions;
 using SupernovaSchool.Telegram.Extensions;
 using SupernovaSchool.Telegram.Extensions.Steps;
 using SupernovaSchool.Telegram.Steps;
@@ -27,7 +28,7 @@ public class CreateAppointmentWorkflow : IWorkflow<CreateAppointmentWorkflowData
             .SendMessageToUser(DefaultStepMessage.ProcessingRequest)
             .Then<EnsureThatUserDosentRegisteredOnMeeting>()
             .Input(meeting => meeting.UserId, data => data.UserId)
-            .Input(meeting => meeting.Date, data => DateOnly.Parse(data.PaginationMessage))
+            .Input(meeting => meeting.Date, data => data.PaginationMessage.ParseApplicationDateOnlyFormat())
             .Output(data => data.UserHasAppointment, user => user.HasAppointment)
             .If(data => data.UserHasAppointment).Do(
                 workflowBuilder => workflowBuilder.CleanupAndEndWorkflow(CreateAppointmentStepMessage

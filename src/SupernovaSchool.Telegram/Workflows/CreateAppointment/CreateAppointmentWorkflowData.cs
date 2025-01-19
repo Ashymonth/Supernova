@@ -1,3 +1,4 @@
+using SupernovaSchool.Extensions;
 using SupernovaSchool.Models;
 using SupernovaSchool.Telegram.Steps;
 
@@ -30,7 +31,7 @@ public class CreateAppointmentWorkflowData : MessagePaginator, IUserStep
 
     public bool IsMeetingDateValid()
     {
-        return DateTime.TryParse(PaginationMessage, out var date) &&
+        return PaginationMessage.TryParseApplicationDateFormat(out var date) &&
                AvailableMeetingDays.Any(time => time.Date == date.Date);
     }
 

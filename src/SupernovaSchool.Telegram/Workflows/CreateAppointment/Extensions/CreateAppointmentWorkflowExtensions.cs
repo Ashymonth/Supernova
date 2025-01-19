@@ -1,3 +1,4 @@
+using SupernovaSchool.Extensions;
 using SupernovaSchool.Telegram.Extensions;
 using SupernovaSchool.Telegram.Steps.Common;
 using SupernovaSchool.Telegram.Workflows.CreateAppointment.Steps;

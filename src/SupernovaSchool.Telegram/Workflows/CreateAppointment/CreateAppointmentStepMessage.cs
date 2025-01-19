@@ -1,3 +1,4 @@
+using SupernovaSchool.Extensions;
 using SupernovaSchool.Models;
 using SupernovaSchool.Telegram.Extensions;
 
