@@ -55,6 +55,6 @@ internal static class CreateAppointmentWorkflowExtensions
                             .ToArray())
                         .WaitForUserMessage(data => data.PaginationMessage, message => message.Message);
                 })
-            .Output((_, data) => data.AppointmentDate = DateTime.Parse(data.PaginationMessage));
+            .Output((_, data) => data.AppointmentDate = data.PaginationMessage.ParseApplicationDateFormat());
     }
 }

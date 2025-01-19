@@ -1,3 +1,4 @@
+using System.Globalization;
 using SupernovaSchool.Telegram.Extensions;
 using SupernovaSchool.Telegram.Extensions.Steps;
 using SupernovaSchool.Telegram.Steps;
@@ -26,11 +27,12 @@ public class DeleteMyAppointmentsWorkflow : IWorkflow<DeleteMyAppointmentsWorkfl
             .Input(delete => delete.UserId, data => data.UserId)
             .Input(delete => delete.StudentAppointments, data => data.StudentAppointmentInfo)
             .WaitForUserInlineData(data => data.AppointmentDateToDelete,
-                o => DateTime.Parse((o as UserMessage)!.Message!))
+                o => (o as UserMessage)!.Message.ParseApplicationDateFormat())
             .SendMessageToUser(DefaultStepMessage.ProcessingRequest)
             .Then<DeleteAppointmentStep>()
             .Input(step => step.UserId, data => data.UserId)
             .Input(step => step.AppointmentDay, data => data.AppointmentDateToDelete)
-            .CleanupAndEndWorkflow(data => DeleteMyAppointmentsStepMessage.CreateSuccessMessage(data.AppointmentDateToDelete));
+            .CleanupAndEndWorkflow(data =>
+                DeleteMyAppointmentsStepMessage.CreateSuccessMessage(data.AppointmentDateToDelete));
     }
 }
