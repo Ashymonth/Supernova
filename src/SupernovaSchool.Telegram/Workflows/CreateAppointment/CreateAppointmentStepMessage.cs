@@ -1,4 +1,5 @@
 using SupernovaSchool.Models;
+using SupernovaSchool.Telegram.Extensions;
 
 namespace SupernovaSchool.Telegram.Workflows.CreateAppointment;
 
@@ -16,10 +17,10 @@ public static class CreateAppointmentStepMessage
     public const string UserNotRegistered =
         $"Сначала вы должна зарегистрироваться с помощью команды {Commands.RegisterAsStudentCommand}";
 
-    public const string ChooseTeacherFromListTemplate = """
-                                                        Для записи выберите сотрудника из списка.
-                                                        {0}"
-                                                        """;
+    private const string ChooseTeacherFromListTemplate = """
+                                                         Для записи выберите сотрудника из списка.
+                                                         {0}"
+                                                         """;
 
     public const string SelectAppointmentDay = "Выберите дату для записи";
 
@@ -44,5 +45,5 @@ public static class CreateAppointmentStepMessage
     }
 
     public static string CreateSuccessMessage(string teacherName, DateTime day, string time) =>
-        string.Format(SuccessMessageTemplate, teacherName, day.ToShortDateString(), time);
+        string.Format(SuccessMessageTemplate, teacherName, day.ToApplicationDateFormat(), time);
 }

@@ -51,7 +51,7 @@ internal static class CreateAppointmentWorkflowExtensions
                 {
                     workflowBuilder
                         .SendVariantsPage(CreateAppointmentStepMessage.SelectAppointmentDay, data => data.AvailableMeetingDays
-                            .Select(slot => slot.ToShortDateString())
+                            .Select(slot => slot.ToApplicationDateFormat())
                             .ToArray())
                         .WaitForUserMessage(data => data.PaginationMessage, message => message.Message);
                 })
