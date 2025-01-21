@@ -1,4 +1,5 @@
 using System.Globalization;
+using HealthChecks.Prometheus.Metrics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Serilog;
@@ -35,14 +36,22 @@ try
     builder.Services.ConfigureOptions<TelegramBotConfigSetup>();
     builder.Services.ConfigureTelegramBotMvc();
 
-    builder.Services.AddHealthChecks().AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!);
- 
+    builder.Services.AddHealthChecks()
+        .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!);
+
+    // Configure the Health Checks UI Client
+    builder.Services.AddHealthChecksUI(options =>
+    {
+        options.SetEvaluationTimeInSeconds(10);
+        options.MaximumHistoryEntriesPerEndpoint(50);
+    }).AddInMemoryStorage();
+
     builder.Services.AddDbContext<SupernovaSchoolDbContext>(optionsBuilder =>
         optionsBuilder.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-    
+
     builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
-    builder.Services.AddScoped<IUnitOfWork, UnitOfWork>(); 
-    
+    builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
     builder.Services.AddSingleton<IPasswordProtector, PasswordProtector>();
     builder.Services.AddSingleton<ISecurityKeyProvider>(provider =>
     {
@@ -78,12 +87,13 @@ try
     app.UseOpenTelemetryPrometheusScrapingEndpoint();
 
     app.MapHealthChecks("/health");
+    app.MapHealthChecksUI(options => options.ApiPath = "/health-ui");
+    app.UseHealthChecksPrometheusExporter(new PathString("/health-prometheus"));
+    
+    app.MapPost("updates",
+        async (UpdateHandler handler, Update update, CancellationToken ct) =>
+            TypedResults.Ok(await handler.HandleUpdateAsync(update, ct)));
 
-    app.MapPost("updates", async (UpdateHandler handler, Update update, CancellationToken ct) =>
-    {
-        return TypedResults.Ok(await handler.HandleUpdateAsync(update, ct));
-    });
- 
     app.UserWorkflowsAndStartHost();
 
     app.Run();
