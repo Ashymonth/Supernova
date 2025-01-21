@@ -14,7 +14,7 @@ using YandexCalendar.Net.Models;
 namespace SupernovaSchool.Tests.Commands;
 
 [Collection("CommandsCollection"), Order(4)]
-public class AddAppointmentCommandTest : BaseCommandTest
+public class AddAppointmentCommandTest : BaseCommandTest, IClassFixture<WebAppFactoryBuilder>
 {
     private readonly Mock<IDateTimeProvider> _dateTimeProviderMock = new();
     private readonly Mock<IAppointmentService> _appointmentServiceMock = new();
@@ -30,9 +30,9 @@ public class AddAppointmentCommandTest : BaseCommandTest
 
     private readonly WebAppFactoryBuilder _appFactoryBuilder;
 
-    public AddAppointmentCommandTest()
+    public AddAppointmentCommandTest(WebAppFactoryBuilder appFactoryBuilder)
     {
-        _appFactoryBuilder = new WebAppFactoryBuilder()
+        _appFactoryBuilder = appFactoryBuilder
             .WithReplacedService(_dateTimeProviderMock.Object)
             .WithStudent(new Student { Id = Config.SenderId.ToString(), Name = "Test student", Class = "7" })
             .WithTeachers(provider =>
@@ -112,9 +112,7 @@ public class AddAppointmentCommandTest : BaseCommandTest
     [Fact, Order(2)]
     public async Task CreateAppointmentAsync_WhenStudentNotRegistered_ShouldReturnErrorMessage()
     {
-        var userIsNotRegisteredFactory = new WebAppFactory();
-
-        await InitializeAsync(userIsNotRegisteredFactory);
+        await InitializeAsync(_appFactoryBuilder);
 
         var expectedMessagesInOrder = new Queue<string>([
             CreateAppointmentStepMessage.UserNotRegistered,
