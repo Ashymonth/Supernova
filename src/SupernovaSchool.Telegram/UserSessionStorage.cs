@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.Extensions.Caching.Memory;
 using SupernovaSchool.Telegram.Extensions;
 using SupernovaSchool.Telegram.Metrics;
@@ -5,7 +6,6 @@ using Telegram.Bot;
 using WorkflowCore.Interface;
 
 namespace SupernovaSchool.Telegram;
- 
 
 public interface IUserSessionStorage
 {
@@ -23,15 +23,18 @@ public class UserSessionStorage : IUserSessionStorage
     private readonly IConversationHistory _conversationHistory;
     private readonly ITelegramBotClient _telegramBotClient;
     private readonly WorkflowCancelledMeter _workflowCancelledMeter;
+    private readonly WorkflowDurationHistogramMetric _durationHistogramMetric;
 
     public UserSessionStorage(IMemoryCache memoryCache, IWorkflowHost workflowHost,
-        IConversationHistory conversationHistory, ITelegramBotClient telegramBotClient, WorkflowCancelledMeter workflowCancelledMeter)
+        IConversationHistory conversationHistory, ITelegramBotClient telegramBotClient,
+        WorkflowCancelledMeter workflowCancelledMeter, WorkflowDurationHistogramMetric durationHistogramMetric)
     {
         _memoryCache = memoryCache;
         _workflowHost = workflowHost;
         _conversationHistory = conversationHistory;
         _telegramBotClient = telegramBotClient;
         _workflowCancelledMeter = workflowCancelledMeter;
+        _durationHistogramMetric = durationHistogramMetric;
     }
 
     public async Task<bool> StartWorkflow(string userId, string workflowName, object workflowData)
@@ -45,24 +48,24 @@ public class UserSessionStorage : IUserSessionStorage
 
         var workflow = await _workflowHost.StartWorkflow(workflowName, workflowData);
 
-        _memoryCache.Set(cacheKey, workflow);
+        _memoryCache.Set(cacheKey, new ConversationHistoryInfo { Workflow = workflow });
 
         return true;
     }
 
-    public async Task TerminateWorkflow(string userId, bool isCancelledByUser,CancellationToken ct = default)
+    public async Task TerminateWorkflow(string userId, bool isCancelledByUser, CancellationToken ct = default)
     {
         var cacheKey = string.Format(CacheKeyTemplate, userId);
-        var workflowId = _memoryCache.Get<string>(cacheKey);
-        if (workflowId is null)
+        var historyInfo = _memoryCache.Get<ConversationHistoryInfo>(cacheKey);
+        if (historyInfo is null)
         {
             return;
         }
 
-        var workWorkflowInstance = await _workflowHost.PersistenceStore.GetWorkflowInstance(workflowId, ct);
+        var workWorkflowInstance = await _workflowHost.PersistenceStore.GetWorkflowInstance(historyInfo.Workflow, ct);
         if (workWorkflowInstance is not null)
         {
-            await _workflowHost.TerminateWorkflow(workflowId);
+            await _workflowHost.TerminateWorkflow(historyInfo.Workflow);
 
             if (isCancelledByUser)
             {
@@ -73,5 +76,14 @@ public class UserSessionStorage : IUserSessionStorage
         await _conversationHistory.DeleteMessagesAsync(userId, _telegramBotClient, ct);
 
         _memoryCache.Remove(cacheKey);
+
+        _durationHistogramMetric.RecordDuration(historyInfo.Workflow, Stopwatch.GetElapsedTime(historyInfo.StartedAt));
+    }
+
+    private class ConversationHistoryInfo
+    {
+        public long StartedAt { get; } = Stopwatch.GetTimestamp();
+
+        public string Workflow { get; set; } = null!;
     }
 }
