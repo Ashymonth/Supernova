@@ -1,5 +1,4 @@
 using SupernovaSchool.Telegram;
-using SupernovaSchool.Tests.Helpers;
 using SupernovaSchool.Tests.Fixtures;
 using Xunit.Extensions.Ordering;
 
@@ -18,7 +17,7 @@ public class StartCommandTest : BaseCommandTest, IClassFixture<WebAppFactoryBuil
     [Fact]
     public async Task StartCommandTest_ShouldSendStartMessageAndUploadAllCommands()
     {
-        await using var webApp = _applicationFactory.Build();
+        var webApp = _applicationFactory.Build();
         await InitializeAsync(webApp);
         
         var expectedMessagesInOrder = new Queue<string>([

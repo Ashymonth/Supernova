@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SupernovaSchool.Data;
@@ -15,11 +16,12 @@ public class WebAppFactoryBuilder : IAsyncLifetime
         .WithPassword("testPassword")
         .WithExposedPort(5432)
         .Build();
-    
+
     private Student? _student;
     private Func<IServiceProvider, List<Teacher>>? _teachers;
-    private readonly Dictionary<Type, object> _replacedServices = [];
+    private readonly ConcurrentDictionary<Type, object> _replacedServices = [];
     private readonly List<Func<IConfigurationBuilder, IConfigurationBuilder>> _additionalConfigurations = [];
+    private WebAppFactory _factory;
 
     public WebAppFactoryBuilder WithStudent(Student student)
     {
@@ -41,7 +43,7 @@ public class WebAppFactoryBuilder : IAsyncLifetime
 
     public WebAppFactoryBuilder WithReplacedService<TService>(TService service)
     {
-        _replacedServices.Add(typeof(TService), service!);
+        _replacedServices.AddOrUpdate(typeof(TService), x => service!, (x, y) => service!);
         return this;
     }
 
@@ -63,14 +65,16 @@ public class WebAppFactoryBuilder : IAsyncLifetime
         {
             seedDataActions.Add((_, context) => context.Students.Add(_student));
         }
-        
+
         if (_teachers is not null)
         {
             seedDataActions.Add((provider, context) => context.Teachers.AddRange(_teachers(provider)));
         }
 
-        return new WebAppFactory(configureServicesAction, configureAppConfigurationAction,
+        _factory = new WebAppFactory(configureServicesAction, configureAppConfigurationAction,
             seedDataActions.Count != 0 ? seedDataActions.ToArray() : null, _container);
+
+        return _factory;
     }
 
     public async Task InitializeAsync()
@@ -80,6 +84,7 @@ public class WebAppFactoryBuilder : IAsyncLifetime
 
     public async Task DisposeAsync()
     {
+        await _factory.DisposeAsync();
         await _container.DisposeAsync();
     }
 }

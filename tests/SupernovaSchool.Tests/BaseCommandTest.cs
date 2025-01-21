@@ -108,7 +108,6 @@ public class BaseCommandTest : IDisposable
     {
         _locker.Dispose();
         _wTelegramClient.Dispose();
-        _appClient.Dispose();
         GC.SuppressFinalize(this);
     }
 }

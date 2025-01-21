@@ -112,8 +112,8 @@ public class AddAppointmentCommandTest : BaseCommandTest, IClassFixture<WebAppFa
     [Fact, Order(2)]
     public async Task CreateAppointmentAsync_WhenStudentNotRegistered_ShouldReturnErrorMessage()
     {
-        await using var webApp = _appFactoryBuilder.Build();
-        await InitializeAsync(_appFactoryBuilder.Build());
+        var webApp = _appFactoryBuilder.Build();
+        await InitializeAsync(webApp);
 
         var expectedMessagesInOrder = new Queue<string>([
             CreateAppointmentStepMessage.UserNotRegistered,
@@ -131,7 +131,7 @@ public class AddAppointmentCommandTest : BaseCommandTest, IClassFixture<WebAppFa
     {
         var selectedDate = DateTime.Parse("2024.10.14");
 
-        await using var webApp = _appFactoryBuilder.WithReplacedService(_appointmentServiceMock.Object).Build();
+         var webApp = _appFactoryBuilder.WithReplacedService(_appointmentServiceMock.Object).Build();
 
         await InitializeAsync(webApp);
         
@@ -154,7 +154,7 @@ public class AddAppointmentCommandTest : BaseCommandTest, IClassFixture<WebAppFa
     {
         var selectedDate = DateTime.Parse("2024.10.14");
 
-        await using var webApp = _appFactoryBuilder.WithReplacedService(_appointmentServiceMock.Object).Build();
+         var webApp = _appFactoryBuilder.WithReplacedService(_appointmentServiceMock.Object).Build();
 
         SetupStudentAppointment(selectedDate,
             [new StudentAppointmentInfo { DueDate = selectedDate, EventId = "test", TeacherName = "test" }]);

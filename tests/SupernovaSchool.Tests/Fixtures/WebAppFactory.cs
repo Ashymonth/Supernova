@@ -10,7 +10,7 @@ using Testcontainers.PostgreSql;
 
 namespace SupernovaSchool.Tests.Fixtures;
 
-public class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifetime
+public class WebAppFactory : WebApplicationFactory<Program>
 {
     private readonly PostgreSqlContainer _container;
 
@@ -84,15 +84,5 @@ public class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifetime
         db.SaveChanges();
 
         return host;
-    }
-
-    public async Task InitializeAsync()
-    {
-        await _container.StartAsync();
-    }
-
-    public new async Task DisposeAsync()
-    {
-        await _container.DisposeAsync();
     }
 }

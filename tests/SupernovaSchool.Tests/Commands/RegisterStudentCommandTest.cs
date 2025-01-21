@@ -21,7 +21,7 @@ public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppF
     [Fact]
     public async Task RegisterStudentCommandTest_ShouldRegisterStudent()
     {
-        await using var webApp = _applicationFactory.Build();
+        var webApp = _applicationFactory.Build();
         await InitializeAsync(webApp);
 
         const string expectedName = "Test name";
