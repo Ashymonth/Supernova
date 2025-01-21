@@ -1,6 +1,6 @@
 using System.Globalization;
-using HealthChecks.Prometheus.Metrics;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 using Serilog;
 using SupernovaSchool;
@@ -37,6 +37,7 @@ try
     builder.Services.ConfigureTelegramBotMvc();
 
     builder.Services.AddHealthChecks()
+        .AddCheck("self", () => new HealthCheckResult(HealthStatus.Healthy))
         .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!);
 
     // Configure the Health Checks UI Client
