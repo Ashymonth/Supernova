@@ -9,19 +9,20 @@ using Xunit.Extensions.Ordering;
 namespace SupernovaSchool.Tests.Commands;
 
 [Collection("CommandsCollection"), Order(2)]
-public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppFactory>
+public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppFactoryBuilder>
 {
-    private readonly WebAppFactory _factory;
+    private readonly WebAppFactoryBuilder _applicationFactory;
 
-    public RegisterStudentCommandTest(WebAppFactory factory)
+    public RegisterStudentCommandTest(WebAppFactoryBuilder applicationFactory)
     {
-        _factory = factory;
+        _applicationFactory = applicationFactory;
     }
 
     [Fact]
     public async Task RegisterStudentCommandTest_ShouldRegisterStudent()
     {
-        await InitializeAsync(_factory);
+        await using var webApp = _applicationFactory.Build();
+        await InitializeAsync(webApp);
 
         const string expectedName = "Test name";
         const string expectedClass = "7";

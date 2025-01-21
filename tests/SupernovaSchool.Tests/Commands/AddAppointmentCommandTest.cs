@@ -62,7 +62,7 @@ public class AddAppointmentCommandTest : BaseCommandTest, IClassFixture<WebAppFa
         var appointmentStartDate = selectedDate.Add(selectedAppointmentSlot.Start.ToTimeSpan());
         var appointmentEndDate = selectedDate.Add(selectedAppointmentSlot.End.ToTimeSpan());
 
-        var webApp = _appFactoryBuilder.WithReplacedService(_eventServiceMock.Object);
+        var webApp = _appFactoryBuilder.WithReplacedService(_eventServiceMock.Object).Build();
 
         await InitializeAsync(webApp);
 
@@ -112,7 +112,8 @@ public class AddAppointmentCommandTest : BaseCommandTest, IClassFixture<WebAppFa
     [Fact, Order(2)]
     public async Task CreateAppointmentAsync_WhenStudentNotRegistered_ShouldReturnErrorMessage()
     {
-        await InitializeAsync(_appFactoryBuilder);
+        await using var webApp = _appFactoryBuilder.Build();
+        await InitializeAsync(_appFactoryBuilder.Build());
 
         var expectedMessagesInOrder = new Queue<string>([
             CreateAppointmentStepMessage.UserNotRegistered,
@@ -129,8 +130,8 @@ public class AddAppointmentCommandTest : BaseCommandTest, IClassFixture<WebAppFa
     public async Task CreateAppointmentAsync_WhenTeacherDoesntHaveFreeTimeSlots_ShouldReturnErrorMessage()
     {
         var selectedDate = DateTime.Parse("2024.10.14");
-        
-        var webApp = _appFactoryBuilder.WithReplacedService(_appointmentServiceMock.Object);
+
+        await using var webApp = _appFactoryBuilder.WithReplacedService(_appointmentServiceMock.Object).Build();
 
         await InitializeAsync(webApp);
         
@@ -153,7 +154,7 @@ public class AddAppointmentCommandTest : BaseCommandTest, IClassFixture<WebAppFa
     {
         var selectedDate = DateTime.Parse("2024.10.14");
 
-        var webApp = _appFactoryBuilder.WithReplacedService(_appointmentServiceMock.Object);
+        await using var webApp = _appFactoryBuilder.WithReplacedService(_appointmentServiceMock.Object).Build();
 
         SetupStudentAppointment(selectedDate,
             [new StudentAppointmentInfo { DueDate = selectedDate, EventId = "test", TeacherName = "test" }]);

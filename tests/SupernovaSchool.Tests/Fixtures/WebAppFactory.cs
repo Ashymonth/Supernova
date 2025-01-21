@@ -12,19 +12,34 @@ namespace SupernovaSchool.Tests.Fixtures;
 
 public class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder()
-        .WithDatabase("supernova_school.test")
-        .WithUsername("testUser")
-        .WithPassword("testPassword")
-        .WithExposedPort(5432)
-        .Build();
+    private readonly PostgreSqlContainer _container;
+
+    private readonly Action<IServiceCollection>[]? _configureServicesAction;
+    private readonly Action<IConfigurationBuilder>[]? _configureAppAction;
+    private readonly Action<IServiceProvider, SupernovaSchoolDbContext>[]? _seedAction;
+ 
+    public WebAppFactory(Action<IServiceCollection>[]? configureServicesAction,
+        Action<IConfigurationBuilder>[]? configureAppAction,
+        Action<IServiceProvider, SupernovaSchoolDbContext>[]? seedAction,
+        PostgreSqlContainer container)
+    {
+        _configureServicesAction = configureServicesAction;
+        _configureAppAction = configureAppAction;
+        _seedAction = seedAction;
+        _container = container;
+    }
 
     protected override IHost CreateHost(IHostBuilder builder)
     {
         builder.ConfigureHostConfiguration(configurationBuilder =>
         {
             configurationBuilder.AddDefaultConfiguration();
-            ConfigureAppConfiguration(configurationBuilder);
+            if (_configureAppAction is null) return;
+
+            foreach (var action in _configureAppAction)
+            {
+                action(configurationBuilder);
+            }
         });
 
         builder.ConfigureServices(services =>
@@ -35,17 +50,21 @@ public class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifetime
             {
                 services.Remove(dbContextDescriptor);
             }
- 
+
             // Add SQLite connection
             services.AddSingleton(SqliteConnectionHelper.CreateConnection());
 
             // Configure DbContext to use SQLite
-            services.AddDbContext<SupernovaSchoolDbContext>((container, options) =>
+            services.AddDbContext<SupernovaSchoolDbContext>((_, options) =>
             {
                 options.UseNpgsql(_container.GetConnectionString());
             });
+            if (_configureServicesAction is null) return;
 
-            ConfigureServices(services);
+            foreach (var action in _configureServicesAction)
+            {
+                action(services);
+            }
         });
 
         var host = base.CreateHost(builder);
@@ -55,23 +74,16 @@ public class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifetime
         db.Database.EnsureDeleted();
         db.Database.EnsureCreated();
 
-        SeedData(scope.ServiceProvider, db);
+        if (_seedAction is null) return host;
+
+        foreach (var action in _seedAction)
+        {
+            action(scope.ServiceProvider, db);
+        }
 
         db.SaveChanges();
 
         return host;
-    }
-
-    protected virtual void ConfigureServices(IServiceCollection services)
-    {
-    }
-
-    protected virtual void ConfigureAppConfiguration(IConfigurationBuilder configurationBuilder)
-    {
-    }
-
-    protected virtual void SeedData(IServiceProvider provider, SupernovaSchoolDbContext dbContext)
-    {
     }
 
     public async Task InitializeAsync()
@@ -79,7 +91,7 @@ public class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifetime
         await _container.StartAsync();
     }
 
-    public async Task DisposeAsync()
+    public new async Task DisposeAsync()
     {
         await _container.DisposeAsync();
     }

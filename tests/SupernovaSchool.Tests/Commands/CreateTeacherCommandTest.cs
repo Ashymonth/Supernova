@@ -28,10 +28,10 @@ public class CreateTeacherCommandTest : BaseCommandTest, IClassFixture<WebAppFac
     [Fact, Order(1)]
     public async Task CreateTeacherTest_WhenUserIsNotAnAdmin_ReturnErrorMessage()
     {
-        _appFactoryBuilder.WithAdditionalConfiguration(builder =>
-            builder.AddJsonFile("appsettings-without-admins.json"));
+        var webApp = _appFactoryBuilder.WithAdditionalConfiguration(builder =>
+            builder.AddJsonFile("appsettings-without-admins.json")).Build();
 
-        await InitializeAsync(_appFactoryBuilder);
+        await InitializeAsync(webApp);
 
         var expectedMessagesInOrder = new Queue<string>([
             CreateTeacherStepMessage.NotEnoughRightToCreateATeacher,
@@ -47,13 +47,13 @@ public class CreateTeacherCommandTest : BaseCommandTest, IClassFixture<WebAppFac
     [Fact, Order(2)]
     public async Task CreateTeacherTest_WhenUserIsAnAdmin_ShouldCreateATeacher()
     {
-        _appFactoryBuilder.WithReplacedService(_authorizationResourceMock.Object);
+        var webApp = _appFactoryBuilder.WithReplacedService(_authorizationResourceMock.Object).Build();
 
         _authorizationResourceMock.Setup(resource => resource.AuthorizeAsync(It.Is<UserCredentials>(credentials =>
             credentials.UserName == ExpectedYandexLogin &&
             credentials.Password == ExpectedYandexPassword), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
-        await InitializeAsync(_appFactoryBuilder);
+        await InitializeAsync(webApp);
 
         var expectedMessagesInOrder = new Queue<string>([
             CreateTeacherStepMessage.InputName,

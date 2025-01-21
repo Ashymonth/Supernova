@@ -6,11 +6,11 @@ using Xunit.Extensions.Ordering;
 namespace SupernovaSchool.Tests.Commands;
 
 [Collection("CommandsCollection"), Order(1)]
-public class StartCommandTest : BaseCommandTest, IClassFixture<WebAppFactory>
+public class StartCommandTest : BaseCommandTest, IClassFixture<WebAppFactoryBuilder>
 {
-    private readonly WebAppFactory _applicationFactory;
+    private readonly WebAppFactoryBuilder _applicationFactory;
 
-    public StartCommandTest(WebAppFactory applicationFactory)
+    public StartCommandTest(WebAppFactoryBuilder applicationFactory)
     {
         _applicationFactory = applicationFactory;
     }
@@ -18,7 +18,8 @@ public class StartCommandTest : BaseCommandTest, IClassFixture<WebAppFactory>
     [Fact]
     public async Task StartCommandTest_ShouldSendStartMessageAndUploadAllCommands()
     {
-        await InitializeAsync(_applicationFactory);
+        await using var webApp = _applicationFactory.Build();
+        await InitializeAsync(webApp);
         
         var expectedMessagesInOrder = new Queue<string>([
             CommandText.StartCommandMessage // we need this because in telegram message that contains \r\n is just \n
