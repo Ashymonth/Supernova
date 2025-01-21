@@ -21,7 +21,7 @@ public class WebAppFactoryBuilder : IAsyncLifetime
     private Func<IServiceProvider, List<Teacher>>? _teachers;
     private readonly ConcurrentDictionary<Type, object> _replacedServices = [];
     private readonly List<Func<IConfigurationBuilder, IConfigurationBuilder>> _additionalConfigurations = [];
-    private WebAppFactory _factory;
+    private WebAppFactory _factory = null!;
 
     public WebAppFactoryBuilder WithStudent(Student student)
     {

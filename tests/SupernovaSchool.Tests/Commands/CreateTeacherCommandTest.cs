@@ -41,7 +41,7 @@ public class CreateTeacherCommandTest : BaseCommandTest, IClassFixture<WebAppFac
 
         await SendUpdate(Telegram.Commands.CreateTeacherCommand);
 
-        Assert.True(expectedMessagesInOrder.Count == 0);
+        Assert.Empty(expectedMessagesInOrder);
     }
 
     [Fact, Order(2)]
@@ -74,7 +74,7 @@ public class CreateTeacherCommandTest : BaseCommandTest, IClassFixture<WebAppFac
 
         _authorizationResourceMock.VerifyAll();
 
-        Assert.True(expectedMessagesInOrder.Count == 0);
+        Assert.Empty(expectedMessagesInOrder);
     }
 
     protected override bool IsFinalUpdateInStep(string message)

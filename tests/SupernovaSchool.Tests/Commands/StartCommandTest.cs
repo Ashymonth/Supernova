@@ -28,6 +28,6 @@ public class StartCommandTest : BaseCommandTest, IClassFixture<WebAppFactoryBuil
         
         await SendUpdate(Telegram.Commands.StartCommand);
  
-        Assert.True(expectedMessagesInOrder.Count == 0);
+        Assert.Empty(expectedMessagesInOrder);
     }
 }

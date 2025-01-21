@@ -51,9 +51,6 @@ public class WebAppFactory : WebApplicationFactory<Program>
                 services.Remove(dbContextDescriptor);
             }
 
-            // Add SQLite connection
-            services.AddSingleton(SqliteConnectionHelper.CreateConnection());
-
             // Configure DbContext to use SQLite
             services.AddDbContext<SupernovaSchoolDbContext>((_, options) =>
             {

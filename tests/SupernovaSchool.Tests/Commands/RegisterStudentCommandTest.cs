@@ -1,9 +1,6 @@
-using SupernovaSchool.Tests.Helpers;
 using SupernovaSchool.Telegram.Workflows;
 using SupernovaSchool.Telegram.Workflows.RegisterStudent;
 using SupernovaSchool.Tests.Fixtures;
-using TL;
-using WTelegram;
 using Xunit.Extensions.Ordering;
 
 namespace SupernovaSchool.Tests.Commands;
@@ -43,7 +40,7 @@ public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppF
 
         await SendUpdate(expectedClass);
 
-        Assert.True(expectedMessagesInOrder.Count == 0);
+        Assert.Empty(expectedMessagesInOrder);
     }
 
     protected override bool IsFinalUpdateInStep(string message)

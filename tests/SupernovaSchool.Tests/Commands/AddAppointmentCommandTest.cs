@@ -105,7 +105,7 @@ public class AddAppointmentCommandTest : BaseCommandTest, IClassFixture<WebAppFa
         await SendUpdate(selectedDate.ToShortDateString());
         await SendUpdate(CreateAppointmentStepMessage.CreateTimeSlotMessage(availableAppointmentSlots[0]));
 
-        Assert.True(expectedMessagesInOrder.Count == 0);
+        Assert.Empty(expectedMessagesInOrder);
         _eventServiceMock.VerifyAll();
     }
 
@@ -123,7 +123,7 @@ public class AddAppointmentCommandTest : BaseCommandTest, IClassFixture<WebAppFa
 
         await SendUpdate(Telegram.Commands.CreateAppointmentCommand);
 
-        Assert.True(expectedMessagesInOrder.Count == 0);
+        Assert.Empty(expectedMessagesInOrder);
     }
 
     [Fact, Order(3)]
@@ -181,7 +181,7 @@ public class AddAppointmentCommandTest : BaseCommandTest, IClassFixture<WebAppFa
         await SendUpdate(selectedTeacherIndex);
         await SendUpdate(selectedDate.ToShortDateString());
 
-        Assert.True(expectedMessagesInOrder.Count == 0);
+        Assert.Empty(expectedMessagesInOrder);
     }
 
     protected override bool IsFinalUpdateInStep(string message)
