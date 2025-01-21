@@ -1,5 +1,4 @@
 using System.Globalization;
-using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Serilog;
@@ -34,7 +33,9 @@ try
     builder.AddSerilogAndOpenTelemetry();
     builder.Services.ConfigureOptions<SecurityConfigSetup>();
     builder.Services.ConfigureOptions<TelegramBotConfigSetup>();
-    builder.Services.ConfigureTelegramBot<JsonOptions>(options => options.SerializerOptions);
+    builder.Services.ConfigureTelegramBotMvc();
+
+    builder.Services.AddHealthChecks().AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!);
  
     builder.Services.AddDbContext<SupernovaSchoolDbContext>(optionsBuilder =>
         optionsBuilder.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -75,6 +76,8 @@ try
     app.UseHttpsRedirection();
 
     app.UseOpenTelemetryPrometheusScrapingEndpoint();
+
+    app.MapHealthChecks("/health");
 
     app.MapPost("updates", async (UpdateHandler handler, Update update, CancellationToken ct) =>
     {
