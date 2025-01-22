@@ -1,6 +1,5 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 using Serilog;
 using SupernovaSchool;
@@ -36,16 +35,7 @@ try
     builder.Services.ConfigureOptions<TelegramBotConfigSetup>();
     builder.Services.ConfigureTelegramBotMvc();
 
-    builder.Services.AddHealthChecks()
-        .AddCheck("self", () => new HealthCheckResult(HealthStatus.Healthy))
-        .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!);
-
-    // Configure the Health Checks UI Client
-    builder.Services.AddHealthChecksUI(options =>
-    {
-        options.SetEvaluationTimeInSeconds(10);
-        options.MaximumHistoryEntriesPerEndpoint(50);
-    }).AddInMemoryStorage();
+    builder.Services.AddConfiguredHealthChecks(builder.Configuration);
 
     builder.Services.AddDbContext<SupernovaSchoolDbContext>(optionsBuilder =>
         optionsBuilder.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -87,10 +77,8 @@ try
 
     app.UseOpenTelemetryPrometheusScrapingEndpoint();
 
-    app.MapHealthChecks("/health");
-    app.MapHealthChecksUI(options => options.ApiPath = "/health-ui");
-    app.UseHealthChecksPrometheusExporter(new PathString("/health-prometheus"));
-    
+    app.UseConfiguredHealthChecks();
+  
     app.MapPost("updates",
         async (UpdateHandler handler, Update update, CancellationToken ct) =>
             TypedResults.Ok(await handler.HandleUpdateAsync(update, ct)));
