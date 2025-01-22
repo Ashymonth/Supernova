@@ -103,4 +103,5 @@ finally
 }
 
 //need for integration tests
+// ReSharper disable once ClassNeverInstantiated.Global
 public partial class Program;
