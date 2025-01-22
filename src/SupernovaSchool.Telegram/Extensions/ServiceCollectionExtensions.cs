@@ -19,6 +19,7 @@ public static class ServiceCollectionExtensions
         services.AddWorkflow();
         services.AddWorkflowMiddleware<DiagnosticMiddleware>();
         services.AddWorkflowStepMiddleware<StepDurationMiddleware>();
+        services.AddWorkflowStepMiddleware<StepDurationMiddleware>();
 
         services.AddBaseSteps();
         services.AddRegisterStudentSteps();

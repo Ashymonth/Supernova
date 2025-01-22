@@ -3,20 +3,13 @@ using SupernovaSchool.Abstractions.Security;
 
 namespace SupernovaSchool.Application.Security;
 
-public class PasswordProtector : IPasswordProtector
+public class PasswordProtector(ISecurityKeyProvider securityKeyProvider) : IPasswordProtector
 {
-    private readonly ISecurityKeyProvider _securityKeyProvider;
-
-    public PasswordProtector(ISecurityKeyProvider securityKeyProvider)
-    {
-        _securityKeyProvider = securityKeyProvider;
-    }
-
     public string Protect(string password)
     {
         using var aesAlg = Aes.Create();
-        aesAlg.Key = _securityKeyProvider.GetKey();
-        aesAlg.IV = _securityKeyProvider.GetInitVector();
+        aesAlg.Key = securityKeyProvider.GetKey();
+        aesAlg.IV = securityKeyProvider.GetInitVector();
 
         var encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV);
 
@@ -43,8 +36,8 @@ public class PasswordProtector : IPasswordProtector
         var cipherBytes = Convert.FromBase64String(protectedPassword);
 
         using var aesAlg = Aes.Create();
-        aesAlg.Key = _securityKeyProvider.GetKey();
-        aesAlg.IV = _securityKeyProvider.GetInitVector();
+        aesAlg.Key = securityKeyProvider.GetKey();
+        aesAlg.IV = securityKeyProvider.GetInitVector();
 
         var decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
 

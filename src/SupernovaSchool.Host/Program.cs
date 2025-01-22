@@ -1,5 +1,4 @@
 using System.Globalization;
-using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Serilog;
@@ -34,14 +33,16 @@ try
     builder.AddSerilogAndOpenTelemetry();
     builder.Services.ConfigureOptions<SecurityConfigSetup>();
     builder.Services.ConfigureOptions<TelegramBotConfigSetup>();
-    builder.Services.ConfigureTelegramBot<JsonOptions>(options => options.SerializerOptions);
- 
+    builder.Services.ConfigureTelegramBotMvc();
+
+    builder.Services.AddConfiguredHealthChecks(builder.Configuration);
+
     builder.Services.AddDbContext<SupernovaSchoolDbContext>(optionsBuilder =>
         optionsBuilder.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-    
+
     builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
-    builder.Services.AddScoped<IUnitOfWork, UnitOfWork>(); 
-    
+    builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
     builder.Services.AddSingleton<IPasswordProtector, PasswordProtector>();
     builder.Services.AddSingleton<ISecurityKeyProvider>(provider =>
     {
@@ -76,11 +77,12 @@ try
 
     app.UseOpenTelemetryPrometheusScrapingEndpoint();
 
-    app.MapPost("updates", async (UpdateHandler handler, Update update, CancellationToken ct) =>
-    {
-        return TypedResults.Ok(await handler.HandleUpdateAsync(update, ct));
-    });
- 
+    app.UseConfiguredHealthChecks();
+  
+    app.MapPost("updates",
+        async (UpdateHandler handler, Update update, CancellationToken ct) =>
+            TypedResults.Ok(await handler.HandleUpdateAsync(update, ct)));
+
     app.UserWorkflowsAndStartHost();
 
     app.Run();
@@ -101,4 +103,5 @@ finally
 }
 
 //need for integration tests
+// ReSharper disable once ClassNeverInstantiated.Global
 public partial class Program;

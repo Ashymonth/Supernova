@@ -3,12 +3,9 @@ using SupernovaSchool.Models;
 
 namespace SupernovaSchool.Data;
 
-public class SupernovaSchoolDbContext : DbContext
+public class SupernovaSchoolDbContext(DbContextOptions<SupernovaSchoolDbContext> dbContextOptions)
+    : DbContext(dbContextOptions)
 {
-    public SupernovaSchoolDbContext(DbContextOptions<SupernovaSchoolDbContext> dbContextOptions) : base(dbContextOptions)
-    {
-    }
-
     public DbSet<Teacher> Teachers => Set<Teacher>();
 
     public DbSet<Student> Students => Set<Student>();

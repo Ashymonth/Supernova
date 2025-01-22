@@ -1,17 +1,27 @@
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SupernovaSchool.Data;
 using SupernovaSchool.Models;
 using SupernovaSchool.Tests.Extensions;
+using Testcontainers.PostgreSql;
 
 namespace SupernovaSchool.Tests.Fixtures;
 
-public class WebAppFactoryBuilder : WebAppFactory
+public class WebAppFactoryBuilder : IAsyncLifetime
 {
+    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder()
+        .WithDatabase("supernova_school.test")
+        .WithUsername("testUser")
+        .WithPassword("testPassword")
+        .WithExposedPort(5432)
+        .Build();
+
     private Student? _student;
     private Func<IServiceProvider, List<Teacher>>? _teachers;
-    private readonly Dictionary<Type, object> _replacedServices = [];
+    private readonly ConcurrentDictionary<Type, object> _replacedServices = [];
     private readonly List<Func<IConfigurationBuilder, IConfigurationBuilder>> _additionalConfigurations = [];
+    private WebAppFactory _factory = null!;
 
     public WebAppFactoryBuilder WithStudent(Student student)
     {
@@ -33,40 +43,48 @@ public class WebAppFactoryBuilder : WebAppFactory
 
     public WebAppFactoryBuilder WithReplacedService<TService>(TService service)
     {
-        _replacedServices.Add(typeof(TService), service!);
+        _replacedServices.AddOrUpdate(typeof(TService), x => service!, (x, y) => service!);
         return this;
     }
 
-    protected override void ConfigureServices(IServiceCollection services)
+    public WebAppFactory Build()
     {
-        foreach (var (serviceType, newService) in _replacedServices)
-        {
-            services.ReplaceRequiredService(serviceType, newService);
-        }
+        var configureServicesAction = _replacedServices.Count != 0
+            ? _replacedServices.Select(func => new Action<IServiceCollection>(
+                collection => collection.ReplaceRequiredService(func.Key, func.Value))).ToArray()
+            : null;
 
-        base.ConfigureServices(services);
-    }
+        var configureAppConfigurationAction = _additionalConfigurations.Count != 0
+            ? _additionalConfigurations.Select(func => new Action<IConfigurationBuilder>(builder => func(builder)))
+                .ToArray()
+            : null;
 
-    protected override void ConfigureAppConfiguration(IConfigurationBuilder configurationBuilder)
-    {
-        foreach (var additionalConfiguration in _additionalConfigurations)
-        {
-            additionalConfiguration(configurationBuilder);
-        }
-    }
+        var seedDataActions = new List<Action<IServiceProvider, SupernovaSchoolDbContext>>();
 
-    protected override void SeedData(IServiceProvider provider, SupernovaSchoolDbContext dbContext)
-    {
         if (_student is not null)
         {
-            dbContext.Students.Add(_student);
+            seedDataActions.Add((_, context) => context.Students.Add(_student));
         }
 
         if (_teachers is not null)
         {
-            dbContext.Teachers.AddRange(_teachers(provider));
+            seedDataActions.Add((provider, context) => context.Teachers.AddRange(_teachers(provider)));
         }
 
-        base.SeedData(provider, dbContext);
+        _factory = new WebAppFactory(configureServicesAction, configureAppConfigurationAction,
+            seedDataActions.Count != 0 ? seedDataActions.ToArray() : null, _container);
+
+        return _factory;
+    }
+
+    public async Task InitializeAsync()
+    {
+        await _container.StartAsync();
+    }
+
+    public async Task DisposeAsync()
+    {
+        await _factory.DisposeAsync();
+        await _container.DisposeAsync();
     }
 }

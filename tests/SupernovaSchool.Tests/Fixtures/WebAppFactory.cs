@@ -1,43 +1,67 @@
-using System.Data.Common;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SupernovaSchool.Data;
-using SupernovaSchool.Models;
 using SupernovaSchool.Tests.Extensions;
 using SupernovaSchool.Tests.Helpers;
+using Testcontainers.PostgreSql;
 
 namespace SupernovaSchool.Tests.Fixtures;
 
 public class WebAppFactory : WebApplicationFactory<Program>
 {
+    private readonly PostgreSqlContainer _container;
+
+    private readonly Action<IServiceCollection>[]? _configureServicesAction;
+    private readonly Action<IConfigurationBuilder>[]? _configureAppAction;
+    private readonly Action<IServiceProvider, SupernovaSchoolDbContext>[]? _seedAction;
+ 
+    public WebAppFactory(Action<IServiceCollection>[]? configureServicesAction,
+        Action<IConfigurationBuilder>[]? configureAppAction,
+        Action<IServiceProvider, SupernovaSchoolDbContext>[]? seedAction,
+        PostgreSqlContainer container)
+    {
+        _configureServicesAction = configureServicesAction;
+        _configureAppAction = configureAppAction;
+        _seedAction = seedAction;
+        _container = container;
+    }
+
     protected override IHost CreateHost(IHostBuilder builder)
     {
         builder.ConfigureHostConfiguration(configurationBuilder =>
         {
             configurationBuilder.AddDefaultConfiguration();
-            ConfigureAppConfiguration(configurationBuilder);
+            if (_configureAppAction is null) return;
+
+            foreach (var action in _configureAppAction)
+            {
+                action(configurationBuilder);
+            }
         });
 
         builder.ConfigureServices(services =>
         {
-            var dbContextDescriptor = services.First(
-                d => d.ServiceType ==
-                     typeof(DbContextOptions<SupernovaSchoolDbContext>));
-
-            services.Remove(dbContextDescriptor);
-
-            services.AddSingleton(SqliteConnectionHelper.CreateConnection());
-
-            services.AddDbContext<SupernovaSchoolDbContext>((container, options) =>
+            var dbContextDescriptor =
+                services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<SupernovaSchoolDbContext>));
+            if (dbContextDescriptor != null)
             {
-                var connection = container.GetRequiredService<DbConnection>();
-                options.UseSqlite(connection);
+                services.Remove(dbContextDescriptor);
+            }
+
+            // Configure DbContext to use SQLite
+            services.AddDbContext<SupernovaSchoolDbContext>((_, options) =>
+            {
+                options.UseNpgsql(_container.GetConnectionString());
             });
-            
-            ConfigureServices(services);
+            if (_configureServicesAction is null) return;
+
+            foreach (var action in _configureServicesAction)
+            {
+                action(services);
+            }
         });
 
         var host = base.CreateHost(builder);
@@ -46,23 +70,16 @@ public class WebAppFactory : WebApplicationFactory<Program>
         var db = scope.ServiceProvider.GetRequiredService<SupernovaSchoolDbContext>();
         db.Database.EnsureDeleted();
         db.Database.EnsureCreated();
-        
-        SeedData(scope.ServiceProvider, db);
+
+        if (_seedAction is null) return host;
+
+        foreach (var action in _seedAction)
+        {
+            action(scope.ServiceProvider, db);
+        }
 
         db.SaveChanges();
 
         return host;
-    }
-
-    protected virtual void ConfigureServices(IServiceCollection services)
-    {
-    }
-
-    protected virtual void ConfigureAppConfiguration(IConfigurationBuilder configurationBuilder)
-    {
-    }
-
-    protected virtual void SeedData(IServiceProvider provider, SupernovaSchoolDbContext dbContext)
-    {
     }
 }

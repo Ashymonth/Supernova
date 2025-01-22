@@ -14,7 +14,7 @@ using YandexCalendar.Net.Models;
 namespace SupernovaSchool.Tests.Commands;
 
 [Collection("CommandsCollection"), Order(4)]
-public class AddAppointmentCommandTest : BaseCommandTest
+public class AddAppointmentCommandTest : BaseCommandTest, IClassFixture<WebAppFactoryBuilder>
 {
     private readonly Mock<IDateTimeProvider> _dateTimeProviderMock = new();
     private readonly Mock<IAppointmentService> _appointmentServiceMock = new();
@@ -30,9 +30,9 @@ public class AddAppointmentCommandTest : BaseCommandTest
 
     private readonly WebAppFactoryBuilder _appFactoryBuilder;
 
-    public AddAppointmentCommandTest()
+    public AddAppointmentCommandTest(WebAppFactoryBuilder appFactoryBuilder)
     {
-        _appFactoryBuilder = new WebAppFactoryBuilder()
+        _appFactoryBuilder = appFactoryBuilder
             .WithReplacedService(_dateTimeProviderMock.Object)
             .WithStudent(new Student { Id = Config.SenderId.ToString(), Name = "Test student", Class = "7" })
             .WithTeachers(provider =>
@@ -62,7 +62,7 @@ public class AddAppointmentCommandTest : BaseCommandTest
         var appointmentStartDate = selectedDate.Add(selectedAppointmentSlot.Start.ToTimeSpan());
         var appointmentEndDate = selectedDate.Add(selectedAppointmentSlot.End.ToTimeSpan());
 
-        var webApp = _appFactoryBuilder.WithReplacedService(_eventServiceMock.Object);
+        var webApp = _appFactoryBuilder.WithReplacedService(_eventServiceMock.Object).Build();
 
         await InitializeAsync(webApp);
 
@@ -105,16 +105,15 @@ public class AddAppointmentCommandTest : BaseCommandTest
         await SendUpdate(selectedDate.ToShortDateString());
         await SendUpdate(CreateAppointmentStepMessage.CreateTimeSlotMessage(availableAppointmentSlots[0]));
 
-        Assert.True(expectedMessagesInOrder.Count == 0);
+        Assert.Empty(expectedMessagesInOrder);
         _eventServiceMock.VerifyAll();
     }
 
     [Fact, Order(2)]
     public async Task CreateAppointmentAsync_WhenStudentNotRegistered_ShouldReturnErrorMessage()
     {
-        var userIsNotRegisteredFactory = new WebAppFactory();
-
-        await InitializeAsync(userIsNotRegisteredFactory);
+        var webApp = _appFactoryBuilder.Build();
+        await InitializeAsync(webApp);
 
         var expectedMessagesInOrder = new Queue<string>([
             CreateAppointmentStepMessage.UserNotRegistered,
@@ -124,15 +123,15 @@ public class AddAppointmentCommandTest : BaseCommandTest
 
         await SendUpdate(Telegram.Commands.CreateAppointmentCommand);
 
-        Assert.True(expectedMessagesInOrder.Count == 0);
+        Assert.Empty(expectedMessagesInOrder);
     }
 
     [Fact, Order(3)]
     public async Task CreateAppointmentAsync_WhenTeacherDoesntHaveFreeTimeSlots_ShouldReturnErrorMessage()
     {
         var selectedDate = DateTime.Parse("2024.10.14");
-        
-        var webApp = _appFactoryBuilder.WithReplacedService(_appointmentServiceMock.Object);
+
+         var webApp = _appFactoryBuilder.WithReplacedService(_appointmentServiceMock.Object).Build();
 
         await InitializeAsync(webApp);
         
@@ -155,7 +154,7 @@ public class AddAppointmentCommandTest : BaseCommandTest
     {
         var selectedDate = DateTime.Parse("2024.10.14");
 
-        var webApp = _appFactoryBuilder.WithReplacedService(_appointmentServiceMock.Object);
+         var webApp = _appFactoryBuilder.WithReplacedService(_appointmentServiceMock.Object).Build();
 
         SetupStudentAppointment(selectedDate,
             [new StudentAppointmentInfo { DueDate = selectedDate, EventId = "test", TeacherName = "test" }]);
@@ -182,7 +181,7 @@ public class AddAppointmentCommandTest : BaseCommandTest
         await SendUpdate(selectedTeacherIndex);
         await SendUpdate(selectedDate.ToShortDateString());
 
-        Assert.True(expectedMessagesInOrder.Count == 0);
+        Assert.Empty(expectedMessagesInOrder);
     }
 
     protected override bool IsFinalUpdateInStep(string message)

@@ -1,27 +1,25 @@
-using SupernovaSchool.Tests.Helpers;
 using SupernovaSchool.Telegram.Workflows;
 using SupernovaSchool.Telegram.Workflows.RegisterStudent;
 using SupernovaSchool.Tests.Fixtures;
-using TL;
-using WTelegram;
 using Xunit.Extensions.Ordering;
 
 namespace SupernovaSchool.Tests.Commands;
 
 [Collection("CommandsCollection"), Order(2)]
-public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppFactory>
+public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppFactoryBuilder>
 {
-    private readonly WebAppFactory _factory;
+    private readonly WebAppFactoryBuilder _applicationFactory;
 
-    public RegisterStudentCommandTest(WebAppFactory factory)
+    public RegisterStudentCommandTest(WebAppFactoryBuilder applicationFactory)
     {
-        _factory = factory;
+        _applicationFactory = applicationFactory;
     }
 
     [Fact]
     public async Task RegisterStudentCommandTest_ShouldRegisterStudent()
     {
-        await InitializeAsync(_factory);
+        var webApp = _applicationFactory.Build();
+        await InitializeAsync(webApp);
 
         const string expectedName = "Test name";
         const string expectedClass = "7";
@@ -42,7 +40,7 @@ public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppF
 
         await SendUpdate(expectedClass);
 
-        Assert.True(expectedMessagesInOrder.Count == 0);
+        Assert.Empty(expectedMessagesInOrder);
     }
 
     protected override bool IsFinalUpdateInStep(string message)
