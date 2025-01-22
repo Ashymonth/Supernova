@@ -23,6 +23,8 @@
         <PackageReference Include="AspNetCore.HealthChecks.UI" Version="9.0.0" />
         <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
         <PackageReference Include="AspNetCore.HealthChecks.UI.InMemory.Storage" Version="9.0.0" />
+        <PackageReference Include="Elastic.Extensions.Logging" Version="8.12.3" />
+        <PackageReference Include="Elastic.Serilog.Sinks" Version="8.12.3" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.1">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -34,6 +36,7 @@
         <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.10.0" />
         <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.10.0" />
         <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+        <PackageReference Include="Serilog.Sinks.Elasticsearch" Version="10.0.0" />
         <PackageReference Include="Serilog.Sinks.Grafana.Loki" Version="8.3.0" />
     </ItemGroup>
 

@@ -1,3 +1,4 @@
+using Elastic.Extensions.Logging;
 using OpenTelemetry.Metrics;
 using Serilog;
 using SupernovaSchool.Telegram.Metrics;
