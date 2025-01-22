@@ -22,12 +22,12 @@ public class DiagnosticMiddleware : IWorkflowMiddleware
     public async Task HandleAsync(WorkflowInstance workflow, WorkflowDelegate next)
     {
         _counterMetric.WorkflowStarted(workflow.WorkflowDefinitionId);
-
-        var workflowId = workflow.Id;
-
-        var userId = workflow.Data is IUserStep userStep ? userStep.UserId : null;
-        using (_logger.BeginScope("WorkflowId => {@WorkflowId}, UserId: {@UserId}", workflowId, userId))
+ 
+        var userId = (workflow.Data as IUserStep)?.UserId;
+        using (_logger.BeginScope("Workflow name => {@WorkflowName}, UserId: {@UserId}", workflow.WorkflowDefinitionId,
+                   userId))
         {
+            _logger.LogInformation("Starting workflow");
             await next();
         }
     }
