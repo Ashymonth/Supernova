@@ -4,7 +4,7 @@ namespace SupernovaSchool.Telegram.Metrics;
 
 public class WorkflowDurationHistogramMetric
 {
-    public const string MeterName = "supernova.work_flow";
+    public const string MeterName = "supernova.workflow";
 
     private readonly Histogram<double> _counter;
 
