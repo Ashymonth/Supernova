@@ -71,7 +71,6 @@ public class UserSessionStorage : IUserSessionStorage
 
             if (isCancelledByUser)
             {
-                _workflowCancelledMeter.WorkflowCancelled(workWorkflowInstance.Id);
                 _workflowCancelledMeter.WorkflowCancelled(workWorkflowInstance.WorkflowDefinitionId);
             }
         }
@@ -88,8 +87,8 @@ public class UserSessionStorage : IUserSessionStorage
     {
         public long StartedAt { get; } = Stopwatch.GetTimestamp();
 
-        public string WorkflowName { get; set; } = null!;
+        public string WorkflowName { get; init; } = null!;
 
-        public string WorkflowId { get; set; } = null!;
+        public string WorkflowId { get; init; } = null!;
     }
 }
