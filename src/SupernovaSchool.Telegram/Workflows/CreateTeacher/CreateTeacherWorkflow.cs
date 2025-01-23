@@ -1,6 +1,5 @@
 using SupernovaSchool.Telegram.Extensions;
 using SupernovaSchool.Telegram.Extensions.Steps;
-using SupernovaSchool.Telegram.Steps;
 using SupernovaSchool.Telegram.Workflows.CreateTeacher.Steps;
 using WorkflowCore.Interface;
 using WorkflowCore.Models;
@@ -15,7 +14,9 @@ public class CreateTeacherWorkflow : IWorkflow<CreateTeacherWorkflowData>
 
     public void Build(IWorkflowBuilder<CreateTeacherWorkflowData> builder)
     {
-        builder.StartWith<EnsureThatUserIsAdminStep>()
+        builder
+            .UseDefaultErrorBehavior(WorkflowErrorHandling.Terminate)
+            .StartWith<EnsureThatUserIsAdminStep>()
             .Input(step => step.UserId, data => data.UserId)
             .Output(data => data.IsAdmin, step => step.IsAdmin)
             .If(data => !data.IsAdmin).Do(workflowBuilder =>
@@ -31,6 +32,10 @@ public class CreateTeacherWorkflow : IWorkflow<CreateTeacherWorkflowData>
             .Input(step => step.Name, data => data.TeacherName)
             .Input(step => step.Login, data => data.YandexCalendarLogin)
             .Input(step => step.Password, data => data.YandexCalendarPassword)
+            .Output(data => data.IsTeacherCreated, step => step.IsTeacherCreated)
+            .If(data => !data.IsTeacherCreated).Do(workflowBuilder =>
+                workflowBuilder
+                    .CleanupAndEndWorkflow("Не удалось создать учителя. Проверьте корректности логина и пароля."))
             .CleanupAndEndWorkflow(data =>
                 CreateTeacherStepMessage.CreateSuccessMessage(data.TeacherName, data.YandexCalendarLogin));
     }

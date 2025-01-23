@@ -73,6 +73,12 @@ try
         app.UseDeveloperExceptionPage();
     }
 
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<SupernovaSchoolDbContext>();
+        db.Database.Migrate();
+    }
+
     app.UseHttpsRedirection();
 
     app.UseOpenTelemetryPrometheusScrapingEndpoint();

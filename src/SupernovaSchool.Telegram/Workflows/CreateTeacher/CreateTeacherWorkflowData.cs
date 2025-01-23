@@ -13,4 +13,6 @@ public class CreateTeacherWorkflowData : IUserStep
     public string YandexCalendarLogin { get; set; } = null!;
     
     public string YandexCalendarPassword { get; set; } = null!;
+
+    public bool IsTeacherCreated { get; set; }
 }

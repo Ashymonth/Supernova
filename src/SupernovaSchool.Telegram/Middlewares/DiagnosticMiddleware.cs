@@ -28,7 +28,14 @@ public class DiagnosticMiddleware : IWorkflowMiddleware
                    userId))
         {
             _logger.LogInformation("Starting workflow");
-            await next();
+            try
+            {
+                await next();
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Workflow execution failed");
+            }
         }
     }
 }
