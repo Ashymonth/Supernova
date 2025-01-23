@@ -4,7 +4,7 @@ namespace SupernovaSchool.Telegram.Metrics;
 
 public class StepDurationTimeMeter
 {
-    public const string MeterName = "supernova.step";
+    public const string MeterName = "supernova.worklofw.step";
 
     private readonly Gauge<double> _counter;
 

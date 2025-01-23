@@ -15,6 +15,7 @@ internal static class DiagnosticExtensions
             .WithMetrics(providerBuilder => providerBuilder
                 .AddMeter(WorkflowStaterCounterMetric.MeterName)
                 .AddMeter(StepDurationTimeMeter.MeterName)
+                .AddMeter(WorkflowDurationGaugeMetric.MeterName)
                 .AddPrometheusExporter()
                 .AddAspNetCoreInstrumentation()
                 .AddRuntimeInstrumentation());
@@ -22,7 +23,7 @@ internal static class DiagnosticExtensions
         
         builder.Services.AddSingleton<WorkflowStaterCounterMetric>();
         builder.Services.AddSingleton<WorkflowCancelledMeter>();
-        builder.Services.AddSingleton<WorkflowDurationHistogramMetric>();
+        builder.Services.AddSingleton<WorkflowDurationGaugeMetric>();
         builder.Services.AddSingleton<StepDurationTimeMeter>();
     }
 }

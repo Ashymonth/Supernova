@@ -23,18 +23,18 @@ public class UserSessionStorage : IUserSessionStorage
     private readonly IConversationHistory _conversationHistory;
     private readonly ITelegramBotClient _telegramBotClient;
     private readonly WorkflowCancelledMeter _workflowCancelledMeter;
-    private readonly WorkflowDurationHistogramMetric _durationHistogramMetric;
+    private readonly WorkflowDurationGaugeMetric _durationGaugeMetric;
 
     public UserSessionStorage(IMemoryCache memoryCache, IWorkflowHost workflowHost,
         IConversationHistory conversationHistory, ITelegramBotClient telegramBotClient,
-        WorkflowCancelledMeter workflowCancelledMeter, WorkflowDurationHistogramMetric durationHistogramMetric)
+        WorkflowCancelledMeter workflowCancelledMeter, WorkflowDurationGaugeMetric durationGaugeMetric)
     {
         _memoryCache = memoryCache;
         _workflowHost = workflowHost;
         _conversationHistory = conversationHistory;
         _telegramBotClient = telegramBotClient;
         _workflowCancelledMeter = workflowCancelledMeter;
-        _durationHistogramMetric = durationHistogramMetric;
+        _durationGaugeMetric = durationGaugeMetric;
     }
 
     public async Task<bool> StartWorkflow(string userId, string workflowName, object workflowData)
@@ -46,9 +46,10 @@ public class UserSessionStorage : IUserSessionStorage
             return false;
         }
 
-        var workflow = await _workflowHost.StartWorkflow(workflowName, workflowData);
+        var workflowId = await _workflowHost.StartWorkflow(workflowName, workflowData);
 
-        _memoryCache.Set(cacheKey, new ConversationHistoryInfo { Workflow = workflow });
+        _memoryCache.Set(cacheKey,
+            new ConversationHistoryInfo { WorkflowName = workflowName, WorkflowId = workflowId });
 
         return true;
     }
@@ -62,13 +63,15 @@ public class UserSessionStorage : IUserSessionStorage
             return;
         }
 
-        var workWorkflowInstance = await _workflowHost.PersistenceStore.GetWorkflowInstance(historyInfo.Workflow, ct);
+        var workWorkflowInstance =
+            await _workflowHost.PersistenceStore.GetWorkflowInstance(historyInfo.WorkflowId, ct);
         if (workWorkflowInstance is not null)
         {
-            await _workflowHost.TerminateWorkflow(historyInfo.Workflow);
+            await _workflowHost.TerminateWorkflow(workWorkflowInstance.Id);
 
             if (isCancelledByUser)
             {
+                _workflowCancelledMeter.WorkflowCancelled(workWorkflowInstance.Id);
                 _workflowCancelledMeter.WorkflowCancelled(workWorkflowInstance.WorkflowDefinitionId);
             }
         }
@@ -77,13 +80,16 @@ public class UserSessionStorage : IUserSessionStorage
 
         _memoryCache.Remove(cacheKey);
 
-        _durationHistogramMetric.RecordDuration(historyInfo.Workflow, Stopwatch.GetElapsedTime(historyInfo.StartedAt));
+        _durationGaugeMetric.RecordDuration(historyInfo.WorkflowName,
+            Stopwatch.GetElapsedTime(historyInfo.StartedAt));
     }
 
     private class ConversationHistoryInfo
     {
         public long StartedAt { get; } = Stopwatch.GetTimestamp();
 
-        public string Workflow { get; set; } = null!;
+        public string WorkflowName { get; set; } = null!;
+
+        public string WorkflowId { get; set; } = null!;
     }
 }
