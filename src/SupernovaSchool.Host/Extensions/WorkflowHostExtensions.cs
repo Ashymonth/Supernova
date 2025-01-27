@@ -1,6 +1,7 @@
 using SupernovaSchool.Telegram.Workflows.CreateAppointment;
 using SupernovaSchool.Telegram.Workflows.CreateTeacher;
 using SupernovaSchool.Telegram.Workflows.DeleteAppointments;
+using SupernovaSchool.Telegram.Workflows.DeleteTeacher;
 using SupernovaSchool.Telegram.Workflows.RegisterStudent;
 using WorkflowCore.Interface;
 
@@ -16,6 +17,7 @@ internal static class WorkflowHostExtensions
         workflowHost.RegisterWorkflow<RegisterStudentWorkflow, RegisterStudentWorkflowData>();
         workflowHost.RegisterWorkflow<DeleteMyAppointmentsWorkflow, DeleteMyAppointmentsWorkflowData>();
         workflowHost.RegisterWorkflow<CreateTeacherWorkflow, CreateTeacherWorkflowData>();
+        workflowHost.RegisterWorkflow<DeleteTeacherWorkflow, DeleteTeacherWorkflowData>();
         workflowHost.Start();
     }
 }

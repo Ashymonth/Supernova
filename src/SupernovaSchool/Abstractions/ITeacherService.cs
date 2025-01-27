@@ -9,4 +9,6 @@ public interface ITeacherService
     Task<Teacher?> GetTeacherAsync(Guid teacherId, CancellationToken ct = default);
 
     Task<IReadOnlyCollection<Teacher>> GetTeachersAsync(CancellationToken ct = default);
+    
+    Task DeleteAsync(Guid teacherId, CancellationToken ct = default);
 }
