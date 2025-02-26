@@ -16,7 +16,7 @@ public class DeleteTeacherWorkflow : IWorkflow<DeleteTeacherWorkflowData>
     public int Version => 1;
 
     public void Build(IWorkflowBuilder<DeleteTeacherWorkflowData> builder)
-    {
+    {   
         builder
             .UseDefaultErrorBehavior(WorkflowErrorHandling.Terminate)
             .StartWith<EnsureThatUserIsAdminStep>()
