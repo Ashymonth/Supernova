@@ -61,7 +61,6 @@ public class DeleteTeacherCommandTest : BaseCommandTest, IClassFixture<WebAppFac
             .Returns(true)
             .Verifiable(Times.Once);
 
-        var existedTeachers = new List<Teacher>();
         var webApp = _appFactoryBuilder
             .WithTeachers(provider =>
             {
@@ -70,9 +69,7 @@ public class DeleteTeacherCommandTest : BaseCommandTest, IClassFixture<WebAppFac
                     Teacher.Create("teacher 1", "login 1", Password.Create("123", passwordProtector)),
                     Teacher.Create("teacher 2", "login 2", Password.Create("123", passwordProtector))
                 ]);
-
-                existedTeachers.AddRange(teachers);
-
+ 
                 tgMock.SetupSendMessage<ReplyKeyboardMarkup>(Config.SenderId,
                     DeleteTeacherStepMessage.SelectTeacherToDeleteMessage(teachers));
                 return teachers;
