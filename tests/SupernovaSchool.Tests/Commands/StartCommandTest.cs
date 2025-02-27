@@ -21,7 +21,7 @@ public class StartCommandTest : BaseCommandTest, IClassFixture<WebAppFactoryBuil
         await InitializeAsync(webApp);
         
         var expectedMessagesInOrder = new Queue<string>([
-            CommandText.StartCommandMessage // we need this because in telegram message that contains \r\n is just \n
+            CommandText.StartCommandMessage
         ]);
 
         SubscribeOnUpdates(expectedMessagesInOrder);
