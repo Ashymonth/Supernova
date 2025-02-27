@@ -41,7 +41,7 @@ public class SendMessageWithOptionsToUser : IStepBody, IUserStep
             ResizeKeyboard = true
         };
 
-        var message = await _telegramBotClient.SendMessage(long.Parse(UserId), Message, replyMarkup: answerOptions);
+        var message = await _telegramBotClient.SendMessage(UserId, Message, replyMarkup: answerOptions);
 
         _conversationHistory.AddMessage(UserId, message.MessageId);
         
