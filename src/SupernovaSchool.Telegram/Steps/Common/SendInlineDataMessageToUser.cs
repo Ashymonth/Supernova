@@ -7,10 +7,10 @@ namespace SupernovaSchool.Telegram.Steps.Common;
 
 public class SendInlineDataMessageToUser : IUserStep, IStepBody
 {
-    private readonly ITelegramBotClientWrapper _telegramBotClient;
+    private readonly ITelegramBotClient _telegramBotClient;
     private readonly IConversationHistory _conversationHistory;
 
-    public SendInlineDataMessageToUser(ITelegramBotClientWrapper telegramBotClient, IConversationHistory conversationHistory)
+    public SendInlineDataMessageToUser(ITelegramBotClient telegramBotClient, IConversationHistory conversationHistory)
     {
         _telegramBotClient = telegramBotClient;
         _conversationHistory = conversationHistory;

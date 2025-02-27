@@ -43,7 +43,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IUserSessionStorage, UserSessionStorage>();
         services.AddSingleton<CommandRegistry>();
 
-        services.AddSingleton<ITelegramBotClientWrapper>(provider => new TelegramBotClientWrapper(botTokenFactory(provider)));
+        services.AddSingleton<ITelegramBotClient>(provider => new TelegramBotClient(botTokenFactory(provider)));
         services.AddSingleton<ICommandUploader, CommandUploader>();
         services.AddHostedService<TelegramBackgroundService>();
     }

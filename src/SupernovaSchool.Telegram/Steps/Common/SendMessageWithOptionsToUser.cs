@@ -8,10 +8,10 @@ namespace SupernovaSchool.Telegram.Steps.Common;
 public class SendMessageWithOptionsToUser : IStepBody, IUserStep
 {
     private const int ItemsPerPage = 5;
-    private readonly ITelegramBotClientWrapper _telegramBotClient;
+    private readonly ITelegramBotClient _telegramBotClient;
     private readonly IConversationHistory _conversationHistory;
 
-    public SendMessageWithOptionsToUser(ITelegramBotClientWrapper telegramBotClient, IConversationHistory conversationHistory)
+    public SendMessageWithOptionsToUser(ITelegramBotClient telegramBotClient, IConversationHistory conversationHistory)
     {
         _telegramBotClient = telegramBotClient;
         _conversationHistory = conversationHistory;

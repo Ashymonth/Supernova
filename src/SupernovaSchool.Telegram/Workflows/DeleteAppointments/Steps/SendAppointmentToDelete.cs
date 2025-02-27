@@ -10,10 +10,10 @@ namespace SupernovaSchool.Telegram.Workflows.DeleteAppointments.Steps;
 
 public class SendAppointmentToDelete : IUserStep, IStepBody
 {
-    private readonly ITelegramBotClientWrapper _telegramBotClient;
+    private readonly ITelegramBotClient _telegramBotClient;
     private readonly IConversationHistory _conversationHistory;
     
-    public SendAppointmentToDelete(ITelegramBotClientWrapper telegramBotClient, IConversationHistory conversationHistory)
+    public SendAppointmentToDelete(ITelegramBotClient telegramBotClient, IConversationHistory conversationHistory)
     {
         _telegramBotClient = telegramBotClient;
         _conversationHistory = conversationHistory;

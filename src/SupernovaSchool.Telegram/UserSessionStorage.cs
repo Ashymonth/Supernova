@@ -21,12 +21,12 @@ public class UserSessionStorage : IUserSessionStorage
     private readonly IMemoryCache _memoryCache;
     private readonly IWorkflowHost _workflowHost;
     private readonly IConversationHistory _conversationHistory;
-    private readonly ITelegramBotClientWrapper _telegramBotClient;
+    private readonly ITelegramBotClient _telegramBotClient;
     private readonly WorkflowCancelledMeter _workflowCancelledMeter;
     private readonly WorkflowDurationGaugeMetric _durationGaugeMetric;
 
     public UserSessionStorage(IMemoryCache memoryCache, IWorkflowHost workflowHost,
-        IConversationHistory conversationHistory, ITelegramBotClientWrapper telegramBotClient,
+        IConversationHistory conversationHistory, ITelegramBotClient telegramBotClient,
         WorkflowCancelledMeter workflowCancelledMeter, WorkflowDurationGaugeMetric durationGaugeMetric)
     {
         _memoryCache = memoryCache;

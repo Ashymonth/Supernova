@@ -17,8 +17,10 @@ public class TelegramBackgroundService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var bot = _serviceProvider.GetRequiredService<ITelegramBotClientWrapper>();
-        
+        var bot = _serviceProvider.GetRequiredService<ITelegramBotClient>();
+
+        await bot.DeleteWebhook(true, stoppingToken);
+
         await bot.ReceiveAsync(async (_, update, ct) =>
             {
                 using var scope = _serviceProvider.CreateScope();
