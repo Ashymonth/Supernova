@@ -11,14 +11,17 @@ public interface ICommandUploader
 
 public class CommandUploader : ICommandUploader
 {
-    private static readonly BotCommand CreateTeacherCommand = new()
-        { Command = Commands.CreateTeacherCommand, Description = "Добавить нового сотрудника в бота" };
+    private static readonly BotCommand[] AdminCommands =
+    [
+        new() { Command = Commands.CreateTeacherCommand, Description = "Добавить нового сотрудника в бота" },
+        new() { Command = Commands.DeleteTeacherCommand, Description = "Удалить сотрудника" },
+    ];
 
     private static readonly BotCommand[] DefaultCommands =
     [
         new() { Command = Commands.CreateAppointmentCommand, Description = "Записаться к психологу" },
         new() { Command = Commands.DeleteAppointmentCommand, Description = "Удалить запись к психологу" },
-        new() { Command = Commands.RegisterAsStudentCommand, Description = "Зарегестрироваться" }
+        new() { Command = Commands.RegisterAsStudentCommand, Description = "Зарегистрироваться" }
     ];
 
     private readonly IAdminsProvider _adminsProvider;
@@ -39,7 +42,7 @@ public class CommandUploader : ICommandUploader
             return;
         }
 
-        await _telegramBotClient.SetMyCommands(DefaultCommands.Concat([CreateTeacherCommand]),
+        await _telegramBotClient.SetMyCommands(DefaultCommands.Concat(AdminCommands),
             BotCommandScope.Chat(userId), cancellationToken: ct);
     }
 }
