@@ -1,7 +1,9 @@
-using Microsoft.Extensions.Configuration;
 using Moq;
+using SupernovaSchool.Abstractions;
+using SupernovaSchool.Telegram;
 using SupernovaSchool.Telegram.Workflows;
 using SupernovaSchool.Telegram.Workflows.CreateTeacher;
+using SupernovaSchool.Tests.Extensions;
 using SupernovaSchool.Tests.Fixtures;
 using Xunit.Extensions.Ordering;
 using YandexCalendar.Net;
@@ -28,30 +30,54 @@ public class CreateTeacherCommandTest : BaseCommandTest, IClassFixture<WebAppFac
     [Fact, Order(1)]
     public async Task CreateTeacherTest_WhenUserIsNotAnAdmin_ReturnErrorMessage()
     {
-        var webApp = _appFactoryBuilder.WithAdditionalConfiguration(builder =>
-            builder.AddJsonFile("appsettings-without-admins.json")).Build();
+        var tgMock = new Mock<ITelegramBotClientWrapper>();
+        tgMock.SetupSendMessage(Config.SenderId, CreateTeacherStepMessage.NotEnoughRightToCreateATeacher);
+
+        var adminsMock = new Mock<IAdminsProvider>();
+        adminsMock.Setup(provider => provider.IsAdmin(Config.SenderId.ToString()))
+            .Returns(false)
+            .Verifiable(Times.Once);
+
+        var webApp = _appFactoryBuilder
+            .WithReplacedService(tgMock.Object)
+            .WithReplacedService(adminsMock.Object)
+            .Build();
 
         await InitializeAsync(webApp);
 
-        var expectedMessagesInOrder = new Queue<string>([
-            CreateTeacherStepMessage.NotEnoughRightToCreateATeacher,
-        ]);
-
-        SubscribeOnUpdates(expectedMessagesInOrder);
-
         await SendUpdate(Telegram.Commands.CreateTeacherCommand);
 
-        Assert.Empty(expectedMessagesInOrder);
+        await Task.Delay(500);
+
+        tgMock.VerifyAll();
+        adminsMock.VerifyAll();
     }
 
     [Fact, Order(2)]
     public async Task CreateTeacherTest_WhenUserIsAnAdmin_ShouldCreateATeacher()
     {
-        var webApp = _appFactoryBuilder.WithReplacedService(_authorizationResourceMock.Object).Build();
+        var tgMock = new Mock<ITelegramBotClientWrapper>();
+        tgMock.SetupSendMessage(Config.SenderId, CreateTeacherStepMessage.InputName);
+        tgMock.SetupSendMessage(Config.SenderId, CreateTeacherStepMessage.InputLoginFromYandexCalendar);
+        tgMock.SetupSendMessage(Config.SenderId, CreateTeacherStepMessage.InputPasswordFromYandexCalendar);
+        tgMock.SetupSendMessage(Config.SenderId, DefaultStepMessage.ProcessingRequest);
+        tgMock.SetupSendMessage(Config.SenderId,
+            CreateTeacherStepMessage.CreateSuccessMessage(ExpectedYandexName, ExpectedYandexLogin));
+
+        var adminsMock = new Mock<IAdminsProvider>();
+        adminsMock.Setup(provider => provider.IsAdmin(Config.SenderId.ToString()))
+            .Returns(true)
+            .Verifiable(Times.Once);
 
         _authorizationResourceMock.Setup(resource => resource.AuthorizeAsync(It.Is<UserCredentials>(credentials =>
             credentials.UserName == ExpectedYandexLogin &&
             credentials.Password == ExpectedYandexPassword), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        var webApp = _appFactoryBuilder
+            .WithReplacedService(tgMock.Object)
+            .WithReplacedService(adminsMock.Object)
+            .WithReplacedService(_authorizationResourceMock.Object)
+            .Build();
 
         await InitializeAsync(webApp);
 
@@ -60,21 +86,28 @@ public class CreateTeacherCommandTest : BaseCommandTest, IClassFixture<WebAppFac
             CreateTeacherStepMessage.InputLoginFromYandexCalendar,
             CreateTeacherStepMessage.InputPasswordFromYandexCalendar,
             DefaultStepMessage.ProcessingRequest,
-            CreateTeacherStepMessage.CreateSuccessMessage(ExpectedYandexName, ExpectedYandexLogin).Replace("\r\n", "\n")
+            CreateTeacherStepMessage.CreateSuccessMessage(ExpectedYandexName, ExpectedYandexLogin)
         ]);
-
-        SubscribeOnUpdates(expectedMessagesInOrder);
 
         await SendUpdate(Telegram.Commands.CreateTeacherCommand);
 
+        await Task.Delay(500);
+
         await SendUpdate(ExpectedYandexName);
+
+        await Task.Delay(500);
+
         await SendUpdate(ExpectedYandexLogin);
+
+        await Task.Delay(500);
 
         await SendUpdate(ExpectedYandexPassword);
 
-        _authorizationResourceMock.VerifyAll();
+        await Task.Delay(500);
 
-        Assert.Empty(expectedMessagesInOrder);
+        tgMock.VerifyAll();
+        adminsMock.VerifyAll();
+        _authorizationResourceMock.VerifyAll();
     }
 
     protected override bool IsFinalUpdateInStep(string message)

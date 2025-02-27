@@ -40,7 +40,7 @@ public class BaseCommandTest : IDisposable
 
     protected async Task InitializeAsync(WebApplicationFactory<Program> applicationFactory)
     {
-        _wTelegramClient = await WTelegramClientFactory.CreateClient(Config);
+        //_wTelegramClient = await WTelegramClientFactory.CreateClient(Config);
         _appClient = applicationFactory.CreateClient();
     }
 
@@ -57,8 +57,7 @@ public class BaseCommandTest : IDisposable
         {
             Message = new TgMessage { Text = message, From = new TgUser { FirstName = "Test", Id = Config.SenderId } }
         }, new JsonSerializerOptions(JsonSerializerDefaults.Web) { Converters = { } });
-
-        _locker.WaitOne();
+ 
     }
 
     protected virtual bool IsFinalUpdateInStep(string message)
@@ -107,7 +106,6 @@ public class BaseCommandTest : IDisposable
     public void Dispose()
     {
         _locker.Dispose();
-        _wTelegramClient.Dispose();
         GC.SuppressFinalize(this);
     }
 }

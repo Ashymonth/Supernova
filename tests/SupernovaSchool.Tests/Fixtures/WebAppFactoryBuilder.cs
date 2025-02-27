@@ -49,7 +49,7 @@ public class WebAppFactoryBuilder : IAsyncLifetime
 
     public WebAppFactory Build()
     {
-        var configureServicesAction = _replacedServices.Count != 0
+        var configureServicesAction = !_replacedServices.IsEmpty
             ? _replacedServices.Select(func => new Action<IServiceCollection>(
                 collection => collection.ReplaceRequiredService(func.Key, func.Value))).ToArray()
             : null;

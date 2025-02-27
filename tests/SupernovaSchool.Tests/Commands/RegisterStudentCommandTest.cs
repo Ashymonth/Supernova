@@ -1,6 +1,11 @@
+using Moq;
+using SupernovaSchool.Telegram;
 using SupernovaSchool.Telegram.Workflows;
 using SupernovaSchool.Telegram.Workflows.RegisterStudent;
+using SupernovaSchool.Tests.Extensions;
 using SupernovaSchool.Tests.Fixtures;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.ReplyMarkups;
 using Xunit.Extensions.Ordering;
 
 namespace SupernovaSchool.Tests.Commands;
@@ -18,29 +23,34 @@ public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppF
     [Fact]
     public async Task RegisterStudentCommandTest_ShouldRegisterStudent()
     {
-        var webApp = _applicationFactory.Build();
-        await InitializeAsync(webApp);
-
         const string expectedName = "Test name";
         const string expectedClass = "7";
 
-        var expectedMessagesInOrder = new Queue<string>([
-            RegisterStudentStepMessage.CommandStartMessage,
-            RegisterStudentStepMessage.InputName,
-            RegisterStudentStepMessage.InputClass,
-            DefaultStepMessage.ProcessingRequest,
-            RegisterStudentStepMessage.CreateSuccessMessage(expectedName, expectedClass),
-        ]);
+        var mock = new Mock<ITelegramBotClientWrapper>();
+        mock.SetupSendMessage<ReplyKeyboardRemove>(Config.SenderId, RegisterStudentStepMessage.CommandStartMessage);
+        mock.SetupSendMessage<ReplyKeyboardRemove>(Config.SenderId, RegisterStudentStepMessage.InputName);
+        mock.SetupSendMessage<ReplyKeyboardMarkup>(Config.SenderId, RegisterStudentStepMessage.InputClass);
+        mock.SetupSendMessage<ReplyKeyboardRemove>(Config.SenderId, DefaultStepMessage.ProcessingRequest);
+        mock.SetupSendMessage<ReplyKeyboardRemove>(Config.SenderId,
+            RegisterStudentStepMessage.CreateSuccessMessage(expectedName, expectedClass));
+  
+        var webApp = _applicationFactory
+            .WithReplacedService(mock.Object)
+            .Build();
 
-        SubscribeOnUpdates(expectedMessagesInOrder);
-
+        await InitializeAsync(webApp);
+ 
         await SendUpdate(Telegram.Commands.RegisterAsStudentCommand);
 
+        await Task.Delay(500);
         await SendUpdate(expectedName);
 
+        await Task.Delay(500);
         await SendUpdate(expectedClass);
 
-        Assert.Empty(expectedMessagesInOrder);
+        await Task.Delay(500);
+        
+        mock.VerifyAll();
     }
 
     protected override bool IsFinalUpdateInStep(string message)

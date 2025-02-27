@@ -13,11 +13,11 @@ public class StepDurationMiddleware : IWorkflowStepMiddleware
 {
     private readonly StepDurationTimeMeter _meter;
     private readonly IUserSessionStorage _userSessionStorage;
-    private readonly ITelegramBotClient _botClient;
+    private readonly ITelegramBotClientWrapper _botClient;
     private readonly ILogger<StepDurationMiddleware> _logger;
 
     public StepDurationMiddleware(StepDurationTimeMeter meter, ILogger<StepDurationMiddleware> logger,
-        IUserSessionStorage userSessionStorage, ITelegramBotClient botClient)
+        IUserSessionStorage userSessionStorage, ITelegramBotClientWrapper botClient)
     {
         _meter = meter;
         _logger = logger;

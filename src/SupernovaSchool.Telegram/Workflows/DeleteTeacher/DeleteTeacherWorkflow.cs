@@ -27,7 +27,7 @@ public class DeleteTeacherWorkflow : IWorkflow<DeleteTeacherWorkflowData>
                 workflowBuilder.CleanupAndEndWorkflow(CreateTeacherStepMessage.NotEnoughRightToCreateATeacher))
             .LoadTeachers()
             .If(data => data.Teachers.Count == 0).Do(workflowBuilder =>
-                workflowBuilder.CleanupAndEndWorkflow("В системе нет ни одого учителя"))
+                workflowBuilder.CleanupAndEndWorkflow("В системе нет ни одного учителя"))
             .SendMessageWithPagination(data => data.TeacherToDelete is null,
                 workflowBuilder => workflowBuilder.SendVariants(data =>
                             DeleteTeacherStepMessage.SelectTeacherToDeleteMessage(data.Teachers),

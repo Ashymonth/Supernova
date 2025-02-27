@@ -1,11 +1,17 @@
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
+using SupernovaSchool.Abstractions;
 using SupernovaSchool.Abstractions.Security;
 using SupernovaSchool.Models;
+using SupernovaSchool.Telegram;
 using SupernovaSchool.Telegram.Workflows.CreateTeacher;
 using SupernovaSchool.Telegram.Workflows.DeleteTeacher;
+using SupernovaSchool.Tests.Extensions;
 using SupernovaSchool.Tests.Fixtures;
+using TL;
 using Xunit.Extensions.Ordering;
+using ReplyKeyboardMarkup = Telegram.Bot.Types.ReplyMarkups.ReplyKeyboardMarkup;
+using ReplyMarkup = Telegram.Bot.Types.ReplyMarkups.ReplyMarkup;
 
 namespace SupernovaSchool.Tests.Commands;
 
@@ -22,51 +28,70 @@ public class DeleteTeacherCommandTest : BaseCommandTest, IClassFixture<WebAppFac
     [Fact, Order(1)]
     public async Task CreateTeacherTest_WhenUserIsNotAnAdmin_ReturnErrorMessage()
     {
-        var webApp = _appFactoryBuilder.WithAdditionalConfiguration(builder =>
-            builder.AddJsonFile("appsettings-without-admins.json")).Build();
+        var mock = new Mock<ITelegramBotClientWrapper>();
+        mock.SetupSendMessage<ReplyMarkup>(Config.SenderId, CreateTeacherStepMessage.NotEnoughRightToCreateATeacher);
+
+        var adminsMock = new Mock<IAdminsProvider>();
+        adminsMock.Setup(provider => provider.IsAdmin(Config.SenderId.ToString()))
+            .Returns(false)
+            .Verifiable(Times.Once);
+
+        var webApp = _appFactoryBuilder
+            .WithReplacedService(mock.Object)
+            .WithReplacedService(adminsMock.Object)
+            .Build();
 
         await InitializeAsync(webApp);
 
-        var expectedMessagesInOrder = new Queue<string>([
-            CreateTeacherStepMessage.NotEnoughRightToCreateATeacher,
-        ]);
+        await SendUpdate(Telegram.Commands.DeleteTeacherCommand);
 
-        SubscribeOnUpdates(expectedMessagesInOrder);
+        await Task.Delay(500);
 
-        await SendUpdate(Telegram.Commands.CreateTeacherCommand);
-
-        Assert.Empty(expectedMessagesInOrder);
+        mock.VerifyAll();
+        adminsMock.VerifyAll();
     }
-    
+
     [Fact, Order(2)]
     public async Task DeleteTeacherTest_WhenUserIsAnAdmin_TeacherExists_ShouldDeleteTeacher()
     {
-        var existedTeachers = new List<Teacher>();
-        var webApp = _appFactoryBuilder.WithTeachers(provider =>
-        {
-            var passwordProtector = provider.GetRequiredService<IPasswordProtector>();
-            var teachers = new List<Teacher>([
-                Teacher.Create("teacher 1", "login 1", Password.Create("123", passwordProtector)),
-                Teacher.Create("teacher 2", "login 2", Password.Create("123", passwordProtector))
-            ]);
-            
-            existedTeachers.AddRange(teachers);
+        var tgMock = new Mock<ITelegramBotClientWrapper>();
 
-            return teachers;
-        });
+        var adminsMock = new Mock<IAdminsProvider>();
+        adminsMock.Setup(provider => provider.IsAdmin(Config.SenderId.ToString()))
+            .Returns(true)
+            .Verifiable(Times.Once);
+
+        var webApp = _appFactoryBuilder
+            .WithTeachers(provider =>
+            {
+                var passwordProtector = provider.GetRequiredService<IPasswordProtector>();
+                var teachers = new List<Teacher>([
+                    Teacher.Create("teacher 1", "login 1", Password.Create("123", passwordProtector)),
+                    Teacher.Create("teacher 2", "login 2", Password.Create("123", passwordProtector))
+                ]);
+ 
+                tgMock.SetupSendMessage<ReplyKeyboardMarkup>(Config.SenderId,
+                    DeleteTeacherStepMessage.SelectTeacherToDeleteMessage(teachers));
+                return teachers;
+            })
+            .WithReplacedService(tgMock.Object)
+            .WithReplacedService(adminsMock.Object);
+
+        
+        tgMock.SetupSendMessage(Config.SenderId, DeleteTeacherStepMessage.TeacherDeletedMessage);
 
         await InitializeAsync(webApp.Build());
-
-        var expectedMessagesInOrder = new Queue<string>([
-            DeleteTeacherStepMessage.SelectTeacherToDeleteMessage(existedTeachers),
-            DeleteTeacherStepMessage.TeacherDeletedMessage
-        ]);
-
-        SubscribeOnUpdates(expectedMessagesInOrder);
-
+ 
         await SendUpdate(Telegram.Commands.DeleteTeacherCommand);
 
-        Assert.Empty(expectedMessagesInOrder);
+        await Task.Delay(500);
+        
+        await SendUpdate("0"); // teacher to delete index
+        
+        await Task.Delay(500);
+        
+        adminsMock.VerifyAll();
+        
+        tgMock.VerifyAll();
     }
-
 }

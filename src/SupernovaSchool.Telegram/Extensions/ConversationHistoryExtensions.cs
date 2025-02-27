@@ -6,7 +6,7 @@ internal static class ConversationHistoryExtensions
 {
     public static async Task DeleteMessagesAsync(this IConversationHistory conversationHistory,
         string userId,
-        ITelegramBotClient botClient,
+        ITelegramBotClientWrapper botClient,
         CancellationToken ct = default)
     {
         conversationHistory.CleanMessages(userId, out var messageIds);
