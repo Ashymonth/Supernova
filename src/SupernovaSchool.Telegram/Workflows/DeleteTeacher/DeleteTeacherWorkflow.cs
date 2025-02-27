@@ -4,6 +4,7 @@ using SupernovaSchool.Telegram.Steps.Common;
 using SupernovaSchool.Telegram.Workflows.CreateTeacher;
 using SupernovaSchool.Telegram.Workflows.CreateTeacher.Steps;
 using SupernovaSchool.Telegram.Workflows.DeleteTeacher.Extensions;
+using SupernovaSchool.Telegram.Workflows.DeleteTeacher.Steps;
 using WorkflowCore.Interface;
 using WorkflowCore.Models;
 
@@ -16,7 +17,7 @@ public class DeleteTeacherWorkflow : IWorkflow<DeleteTeacherWorkflowData>
     public int Version => 1;
 
     public void Build(IWorkflowBuilder<DeleteTeacherWorkflowData> builder)
-    {   
+    {
         builder
             .UseDefaultErrorBehavior(WorkflowErrorHandling.Terminate)
             .StartWith<EnsureThatUserIsAdminStep>()
@@ -26,13 +27,13 @@ public class DeleteTeacherWorkflow : IWorkflow<DeleteTeacherWorkflowData>
                 workflowBuilder.CleanupAndEndWorkflow(CreateTeacherStepMessage.NotEnoughRightToCreateATeacher))
             .LoadTeachers()
             .If(data => data.Teachers.Count == 0).Do(workflowBuilder =>
-                workflowBuilder.CleanupAndEndWorkflow("В системе нет ни одного учителя"))
+                workflowBuilder.CleanupAndEndWorkflow("В системе нет ни одого учителя"))
             .SendMessageWithPagination(data => data.TeacherToDelete is null,
-                workflowBuilder => workflowBuilder.SendVariants(data => "Выберите номер учителя для удаления: \n" +
-                                                                        $"{data.CreateSelectTeacherIndexMessage()}",
-                    data => data.Teachers.Select((_, index) => index.ToString()).ToArray())
+                workflowBuilder => workflowBuilder.SendVariants(data =>
+                            DeleteTeacherStepMessage.SelectTeacherToDeleteMessage(data.Teachers),
+                        data => data.Teachers.Select((_, index) => index.ToString()).ToArray())
                     .WaitForUserMessage(data => data.SelectedTeacherIndex, message => message.Message))
             .DeleteSelectedTeacher()
-            .CleanupAndEndWorkflow("Учитель удален");
+            .CleanupAndEndWorkflow(DeleteTeacherStepMessage.TeacherDeletedMessage);
     }
 }
