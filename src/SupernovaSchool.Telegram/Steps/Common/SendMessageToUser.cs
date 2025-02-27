@@ -7,18 +7,18 @@ namespace SupernovaSchool.Telegram.Steps.Common;
 
 public class SendMessageToUser : IStepBody, IUserStep
 {
-    private readonly ITelegramBotClient _telegramBotClient;
+    private readonly ITelegramBotClientWrapper _telegramBotClient;
     private readonly IConversationHistory _conversationHistory;
 
-    public SendMessageToUser(ITelegramBotClient telegramBotClient, IConversationHistory conversationHistory)
+    public SendMessageToUser(ITelegramBotClientWrapper telegramBotClient, IConversationHistory conversationHistory)
     {
         _telegramBotClient = telegramBotClient;
         _conversationHistory = conversationHistory;
     }
 
-    public string UserId { get; set; } = default!;
+    public string UserId { get; set; } = null!;
 
-    public string Message { get; set; } = default!;
+    public string Message { get; set; } = null!;
 
     public bool ShouldBeDeleted { get; set; } = true;
 

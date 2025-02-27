@@ -1,5 +1,4 @@
 using SupernovaSchool.Abstractions;
-using Telegram.Bot;
 using Telegram.Bot.Types;
 
 namespace SupernovaSchool.Telegram;
@@ -25,9 +24,9 @@ public class CommandUploader : ICommandUploader
     ];
 
     private readonly IAdminsProvider _adminsProvider;
-    private readonly ITelegramBotClient _telegramBotClient;
+    private readonly ITelegramBotClientWrapper _telegramBotClient;
 
-    public CommandUploader(IAdminsProvider adminsProvider, ITelegramBotClient telegramBotClient)
+    public CommandUploader(IAdminsProvider adminsProvider, ITelegramBotClientWrapper telegramBotClient)
     {
         _adminsProvider = adminsProvider;
         _telegramBotClient = telegramBotClient;
