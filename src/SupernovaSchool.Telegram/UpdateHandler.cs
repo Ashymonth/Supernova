@@ -39,7 +39,7 @@ public class UpdateHandler
         if (string.Equals(Commands.StartCommand, message, StringComparison.InvariantCultureIgnoreCase))
         {
             await _commandUploader.UploadUserCommandsAsync(userId, token);
-            return await _telegramBotClient.SendMessage(userId, CommandText.StartCommandMessage,
+            return await _telegramBotClient.SendMessage(long.Parse(userId), CommandText.StartCommandMessage,
                 cancellationToken: token);
         }
 
@@ -48,7 +48,7 @@ public class UpdateHandler
         if (string.Equals(CommandText.ExitCommand, message, StringComparison.InvariantCultureIgnoreCase))
         {
             await _userSessionStorage.TerminateWorkflow(userId, true, token);
-            return await _telegramBotClient.SendMessage(userId, CommandText.CommandCanceled,
+            return await _telegramBotClient.SendMessage(long.Parse(userId), CommandText.CommandCanceled,
                 cancellationToken: token);
         }
 

@@ -11,17 +11,7 @@ public interface ITelegramBotClientWrapper
     Task<Message> SendMessage(
         ChatId chatId,
         string message,
-        ParseMode parseMode = ParseMode.None,
-        ReplyParameters? replyParameters = null,
         ReplyMarkup? replyMarkup = null,
-        LinkPreviewOptions? linkPreviewOptions = null,
-        int? messageThreadId = null,
-        IEnumerable<MessageEntity>? entities = null,
-        bool disableNotification = false,
-        bool protectContent = false,
-        string? messageEffectId = null,
-        string? businessConnectionId = null,
-        bool allowPaidBroadcast = false,
         CancellationToken cancellationToken = default);
 
     Task DeleteMessage(
@@ -53,6 +43,13 @@ public interface ITelegramBotClientWrapper
 
 public class TelegramBotClientWrapper : TelegramBotClient, ITelegramBotClientWrapper
 {
+    /// <summary>
+    /// Only for tests
+    /// </summary>
+    public TelegramBotClientWrapper() : this("12345:srgsgr")
+    {
+    }
+
     public TelegramBotClientWrapper(TelegramBotClientOptions options, HttpClient? httpClient = null,
         CancellationToken cancellationToken = new()) : base(options, httpClient, cancellationToken)
     {
@@ -63,19 +60,11 @@ public class TelegramBotClientWrapper : TelegramBotClient, ITelegramBotClientWra
     {
     }
 
-    public async Task<Message> SendMessage(ChatId chatId, string message, ParseMode parseMode = ParseMode.None,
-        ReplyParameters? replyParameters = null, ReplyMarkup? replyMarkup = null,
-        LinkPreviewOptions? linkPreviewOptions = null, int? messageThreadId = null,
-        IEnumerable<MessageEntity>? entities = null,
-        bool disableNotification = false, bool protectContent = false, string? messageEffectId = null,
-        string? businessConnectionId = null, bool allowPaidBroadcast = false,
+    public async Task<Message> SendMessage(ChatId chatId, string message, ReplyMarkup? replyMarkup = null,
         CancellationToken cancellationToken = default)
     {
-        return await TelegramBotClientExtensions.SendMessage(this, chatId, message, parseMode, replyParameters,
-            replyMarkup,
-            linkPreviewOptions,
-            messageThreadId, entities, disableNotification, protectContent, messageEffectId, businessConnectionId,
-            allowPaidBroadcast, cancellationToken);
+        return await TelegramBotClientExtensions.SendMessage(this, chatId, message, replyMarkup: replyMarkup,
+            cancellationToken: cancellationToken);
     }
 
     public async Task DeleteMessage(ChatId chatId, int messageId, CancellationToken cancellationToken = default)
