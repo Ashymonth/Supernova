@@ -5,6 +5,7 @@ using SupernovaSchool.Telegram.Middlewares;
 using SupernovaSchool.Telegram.Workflows.CreateAppointment.Steps;
 using SupernovaSchool.Telegram.Workflows.CreateTeacher.Steps;
 using SupernovaSchool.Telegram.Workflows.DeleteAppointments.Steps;
+using SupernovaSchool.Telegram.Workflows.DeleteTeacher.Steps;
 using Telegram.Bot;
 
 namespace SupernovaSchool.Telegram.Extensions;
@@ -36,6 +37,7 @@ public static class ServiceCollectionExtensions
 
         services.AddTransient<EnsureThatUserIsAdminStep>();
         services.AddTransient<CreateTeacherStep>();
+        services.AddTransient<DeleteTeacherStep>();
 
         services.AddSingleton<IConversationHistory, ConversationHistory>();
         services.AddSingleton<IUserSessionStorage, UserSessionStorage>();

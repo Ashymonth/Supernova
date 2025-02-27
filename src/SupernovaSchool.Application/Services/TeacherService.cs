@@ -32,7 +32,7 @@ public class TeacherService : ITeacherService
         {
             throw new InvalidOperationException("Invalid login or password.");
         }
-        
+
         var teacher = Teacher.Create(name, login, Password.Create(password, _passwordProtector));
 
         await _teacherRepository.AddAsync(teacher, ct);
@@ -59,5 +59,19 @@ public class TeacherService : ITeacherService
 
             return result;
         }))!;
+    }
+
+    public async Task DeleteAsync(Guid teacherId, CancellationToken ct = default)
+    {
+        var teacher = await GetTeacherAsync(teacherId, ct);
+        if (teacher is null)
+        {
+            throw new InvalidOperationException("Teacher not found.");
+        }
+
+        _teacherRepository.Remove(teacher);
+
+        await _teacherRepository.UnitOfWork.SaveChangesAsync(ct);
+        _memoryCache.Remove(TeachersCacheKey); // invalidate cache with all teachers
     }
 }
