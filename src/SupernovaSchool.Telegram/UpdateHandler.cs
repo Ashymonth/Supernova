@@ -9,14 +9,14 @@ namespace SupernovaSchool.Telegram;
 
 public class UpdateHandler
 {
-    private readonly ITelegramBotClient _telegramBotClient;
+    private readonly ITelegramBotClientWrapper _telegramBotClient;
     private readonly IWorkflowHost _workflowHost;
     private readonly CommandRegistry _commandRegistry;
     private readonly IUserSessionStorage _userSessionStorage;
     private readonly IConversationHistory _conversationHistory;
     private readonly ICommandUploader _commandUploader;
 
-    public UpdateHandler(ITelegramBotClient telegramBotClient, IWorkflowHost workflowHost,
+    public UpdateHandler(ITelegramBotClientWrapper telegramBotClient, IWorkflowHost workflowHost,
         CommandRegistry commandRegistry, IUserSessionStorage userSessionStorage,
         IConversationHistory conversationHistory, ICommandUploader commandUploader)
     {
@@ -34,8 +34,7 @@ public class UpdateHandler
         var messageId = update.Message?.MessageId ?? update.CallbackQuery?.Message?.MessageId!;
         var userId = update.Message?.From?.Id.ToString() ?? update.CallbackQuery?.From.Id.ToString()!;
 
-        await _telegramBotClient.SendChatAction(long.Parse(userId), ChatAction.Typing,
-            cancellationToken: token);
+        await _telegramBotClient.SendChatAction(long.Parse(userId), ChatAction.Typing, cancellationToken: token);
 
         if (string.Equals(Commands.StartCommand, message, StringComparison.InvariantCultureIgnoreCase))
         {

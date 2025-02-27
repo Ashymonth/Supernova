@@ -8,10 +8,10 @@ public class SendInitialMessageToUserStep : IStepBody, IUserStep
 {
     private const string InitialMessageTemplate = "{0}\n Для завершения команды введите 'Выйти'";
 
-    private readonly ITelegramBotClient _client;
+    private readonly ITelegramBotClientWrapper _client;
     private readonly IConversationHistory _conversationHistory;
 
-    public SendInitialMessageToUserStep(ITelegramBotClient client, IConversationHistory conversationHistory)
+    public SendInitialMessageToUserStep(ITelegramBotClientWrapper client, IConversationHistory conversationHistory)
     {
         _client = client;
         _conversationHistory = conversationHistory;
