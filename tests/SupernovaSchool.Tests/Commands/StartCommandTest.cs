@@ -1,7 +1,9 @@
 using Moq;
 using SupernovaSchool.Telegram;
+using SupernovaSchool.Tests.Extensions;
 using SupernovaSchool.Tests.Fixtures;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.ReplyMarkups;
 using Xunit.Extensions.Ordering;
 
 namespace SupernovaSchool.Tests.Commands;
@@ -20,11 +22,7 @@ public class StartCommandTest : BaseCommandTest, IClassFixture<WebAppFactoryBuil
     public async Task StartCommandTest_ShouldSendStartMessageAndUploadAllCommands()
     {
         var mock = new Mock<ITelegramBotClientWrapper>();
-        mock.Setup(
-                wrapper => wrapper.SendMessage(It.Is<ChatId>(id => id.Identifier == Config.SenderId),
-                    CommandText.StartCommandMessage, null, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Message { Text = CommandText.StartCommandMessage })
-            .Verifiable(Times.Once);
+        mock.SetupSendMessage<ReplyMarkup>(Config.SenderId, CommandText.StartCommandMessage);
 
         var webApp = _applicationFactory.WithReplacedService(mock.Object).Build();
         await InitializeAsync(webApp);

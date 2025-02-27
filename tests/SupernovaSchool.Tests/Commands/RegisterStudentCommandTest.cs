@@ -2,6 +2,7 @@ using Moq;
 using SupernovaSchool.Telegram;
 using SupernovaSchool.Telegram.Workflows;
 using SupernovaSchool.Telegram.Workflows.RegisterStudent;
+using SupernovaSchool.Tests.Extensions;
 using SupernovaSchool.Tests.Fixtures;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -26,44 +27,13 @@ public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppF
         const string expectedClass = "7";
 
         var mock = new Mock<ITelegramBotClientWrapper>();
-        mock.Setup(
-                wrapper => wrapper.SendMessage(It.Is<ChatId>(id => id.Identifier == Config.SenderId),
-                    RegisterStudentStepMessage.CommandStartMessage, It.IsAny<ReplyKeyboardRemove>(),
-                    It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Message { Text = RegisterStudentStepMessage.CommandStartMessage })
-            .Verifiable(Times.Once);
-        mock.Setup(
-                wrapper => wrapper.SendMessage(It.Is<ChatId>(id => id.Identifier == Config.SenderId),
-                    RegisterStudentStepMessage.InputName, It.IsAny<ReplyKeyboardRemove>(),
-                    It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Message { Text = RegisterStudentStepMessage.InputName })
-            .Verifiable(Times.Once);
-
-        mock.Setup(
-                wrapper => wrapper.SendMessage(It.Is<ChatId>(id => id.Identifier == Config.SenderId),
-                    RegisterStudentStepMessage.InputClass, It.IsAny<ReplyKeyboardMarkup>(),
-                    It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Message { Text = RegisterStudentStepMessage.InputClass })
-            .Verifiable(Times.Once);
-
-        mock.Setup(
-                wrapper => wrapper.SendMessage(It.Is<ChatId>(id => id.Identifier == Config.SenderId),
-                    DefaultStepMessage.ProcessingRequest,
-                    It.IsAny<ReplyKeyboardRemove>(),
-                    It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Message
-                { Text = DefaultStepMessage.ProcessingRequest, })
-            .Verifiable(Times.Once);
-        
-        mock.Setup(
-                wrapper => wrapper.SendMessage(It.Is<ChatId>(id => id.Identifier == Config.SenderId),
-                    RegisterStudentStepMessage.CreateSuccessMessage(expectedName, expectedClass),
-                    It.IsAny<ReplyKeyboardRemove>(),
-                    It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Message
-                { Text = RegisterStudentStepMessage.CreateSuccessMessage(expectedName, expectedClass), })
-            .Verifiable(Times.Once);
-
+        mock.SetupSendMessage<ReplyKeyboardRemove>(Config.SenderId, RegisterStudentStepMessage.CommandStartMessage);
+        mock.SetupSendMessage<ReplyKeyboardRemove>(Config.SenderId, RegisterStudentStepMessage.InputName);
+        mock.SetupSendMessage<ReplyKeyboardMarkup>(Config.SenderId, RegisterStudentStepMessage.InputClass);
+        mock.SetupSendMessage<ReplyKeyboardRemove>(Config.SenderId, DefaultStepMessage.ProcessingRequest);
+        mock.SetupSendMessage<ReplyKeyboardRemove>(Config.SenderId,
+            RegisterStudentStepMessage.CreateSuccessMessage(expectedName, expectedClass));
+  
         var webApp = _applicationFactory
             .WithReplacedService(mock.Object)
             .Build();
@@ -71,7 +41,6 @@ public class RegisterStudentCommandTest : BaseCommandTest, IClassFixture<WebAppF
         await InitializeAsync(webApp);
  
         await SendUpdate(Telegram.Commands.RegisterAsStudentCommand);
-
 
         await Task.Delay(500);
         await SendUpdate(expectedName);
