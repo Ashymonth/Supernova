@@ -38,7 +38,7 @@ public class StepDurationMiddleware : IWorkflowStepMiddleware
 
             var duration = Stopwatch.GetElapsedTime(sw);
 
-            _meter.RecordStepDuration(context.Step.Name, duration);
+           // _meter.RecordStepDuration(context.Step.Name, duration);
 
             return result;
         }
